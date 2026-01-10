@@ -961,6 +961,9 @@
         let map, allMarkers = [], expedientesSet = new Set(), gpxLayers = [], drawnItems;
         let currentUser = null;
         let navWatchId, targetLatLng;
+        let deviceHeading = 0; // Orientación del dispositivo en grados
+        let targetBearing = 0; // Rumbo hacia el objetivo
+        let orientationSupported = false;
         let layers = {};
         let drawControl, drawToolbarVisible = false;
         let userLocationMarker = null, userLocationCircle = null;
@@ -1745,6 +1748,9 @@
             closeNavSetup();
             document.getElementById('nav-dashboard').style.display = 'flex';
             
+            // Iniciar sensor de orientación del dispositivo
+            startDeviceOrientation();
+            
             if (navigator.geolocation) {
                 navWatchId = navigator.geolocation.watchPosition(
                     updateNavigation,
@@ -1783,20 +1789,92 @@
             document.getElementById('nav-dist').textContent = Math.round(dist);
             document.getElementById('nav-accuracy').textContent = `±${Math.round(pos.coords.accuracy)}m`;
             
-            // Calcular rumbo
-            const y = Math.sin(targetLatLng.lng - user.lng) * Math.cos(targetLatLng.lat);
-            const x = Math.cos(user.lat) * Math.sin(targetLatLng.lat) - 
-                     Math.sin(user.lat) * Math.cos(targetLatLng.lat) * Math.cos(targetLatLng.lng - user.lng);
-            const brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+            // Calcular rumbo hacia el objetivo (bearing)
+            const lat1 = user.lat * Math.PI / 180;
+            const lat2 = targetLatLng.lat * Math.PI / 180;
+            const dLng = (targetLatLng.lng - user.lng) * Math.PI / 180;
             
-            document.getElementById('nav-bearing').textContent = Math.round(brng) + '°';
-            document.getElementById('nav-arrow-container').style.transform = `rotate(${brng}deg)`;
+            const y = Math.sin(dLng) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) - 
+                     Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+            targetBearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+            
+            document.getElementById('nav-bearing').textContent = Math.round(targetBearing) + '°';
+            
+            // Rotar la flecha según la diferencia entre el rumbo objetivo y la orientación del dispositivo
+            // Si deviceHeading = 0 (orientación no disponible), solo rota según bearing
+            const rotationAngle = targetBearing - deviceHeading;
+            document.getElementById('nav-arrow-container').style.transform = `rotate(${rotationAngle}deg)`;
+        }
+        
+        
+        // ====================================================================
+        // FUNCIONES DE ORIENTACIÓN DEL DISPOSITIVO (BRÚJULA)
+        // ====================================================================
+        
+        function startDeviceOrientation() {
+            // Detectar si el navegador soporta orientación
+            if (typeof DeviceOrientationEvent !== 'undefined') {
+                // iOS 13+ requiere permiso explícito
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    DeviceOrientationEvent.requestPermission()
+                        .then(response => {
+                            if (response === 'granted') {
+                                window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+                                window.addEventListener('deviceorientation', handleOrientationFallback, true);
+                                orientationSupported = true;
+                            } else {
+                                console.warn('Permiso de orientación denegado');
+                                showNotification('ℹ️ Brújula no disponible. La flecha apuntará al norte del objetivo.', 'info');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error requesting orientation permission:', err);
+                            window.addEventListener('deviceorientation', handleOrientationFallback, true);
+                        });
+                } else {
+                    // Android y otros navegadores no necesitan permiso
+                    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+                    window.addEventListener('deviceorientation', handleOrientationFallback, true);
+                    orientationSupported = true;
+                }
+            } else {
+                console.warn('DeviceOrientation no soportado');
+                showNotification('ℹ️ Tu dispositivo no soporta brújula. La flecha apuntará al norte del objetivo.', 'info');
+            }
+        }
+        
+        function handleOrientation(event) {
+            // Evento con orientación absoluta (brújula magnética)
+            if (event.webkitCompassHeading !== undefined) {
+                // iOS usa webkitCompassHeading
+                deviceHeading = event.webkitCompassHeading;
+            } else if (event.alpha !== null) {
+                // Android y otros usan alpha (0 = Norte, 90 = Este, 180 = Sur, 270 = Oeste)
+                deviceHeading = 360 - event.alpha;
+            }
+        }
+        
+        function handleOrientationFallback(event) {
+            // Fallback para dispositivos sin orientación absoluta
+            if (event.alpha !== null && !event.absolute) {
+                // Orientación relativa - menos precisa
+                deviceHeading = 360 - event.alpha;
+            }
+        }
+        
+        function stopDeviceOrientation() {
+            window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
+            window.removeEventListener('deviceorientation', handleOrientationFallback, true);
+            deviceHeading = 0;
+            orientationSupported = false;
         }
         
         function stopNavigation() {
             if (navWatchId && navigator.geolocation) {
                 navigator.geolocation.clearWatch(navWatchId);
             }
+            stopDeviceOrientation();
             document.getElementById('nav-dashboard').style.display = 'none';
             showNotification("Navegación detenida", "success");
         }
