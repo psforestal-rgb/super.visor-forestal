@@ -847,6 +847,12 @@
                 <div class="nav-metric-val" style="color:#10b981;" id="nav-accuracy">--</div>
             </div>
         </div>
+        <div class="nav-metrics" style="opacity: 0.6; font-size: 11px;">
+            <div class="nav-metric-item">
+                <div class="nav-metric-label" style="font-size: 10px;">Orientación</div>
+                <div class="nav-metric-val" style="font-size: 12px;" id="nav-device-heading">--</div>
+            </div>
+        </div>
         <button id="nav-stop-btn" onclick="stopNavigation()">SALIR</button>
     </div>
 
@@ -1629,7 +1635,18 @@
                 }
             });
             document.getElementById('filter-stats').textContent = `${cnt} árboles visibles`;
-            if (shouldZoom && cnt > 0) map.fitBounds(b, { padding: [50, 50] });
+            
+            // El marcador de ubicación del usuario (userLocationMarker) NO está en allMarkers,
+            // por lo que SIEMPRE permanece visible después de filtrar
+            
+            // Si hay zoom automático y árboles visibles
+            if (shouldZoom && cnt > 0) {
+                // Si el usuario tiene su ubicación GPS activa, incluirla en el zoom
+                if (userLocationMarker && map.hasLayer(userLocationMarker)) {
+                    b.extend(userLocationMarker.getLatLng());
+                }
+                map.fitBounds(b, { padding: [50, 50] });
+            }
             updateLabels();
         }
         
@@ -1801,9 +1818,18 @@
             
             document.getElementById('nav-bearing').textContent = Math.round(targetBearing) + '°';
             
-            // Rotar la flecha según la diferencia entre el rumbo objetivo y la orientación del dispositivo
-            // Si deviceHeading = 0 (orientación no disponible), solo rota según bearing
-            const rotationAngle = targetBearing - deviceHeading;
+            // Mostrar orientación del dispositivo (debug)
+            document.getElementById('nav-device-heading').textContent = Math.round(deviceHeading) + '°';
+            
+            // Calcular el ángulo de rotación con normalización correcta
+            // Esto maneja correctamente el wraparound de 0-360 grados
+            let rotationAngle = targetBearing - deviceHeading;
+            
+            // Normalizar el ángulo al rango [-180, 180]
+            // Esto asegura que siempre tomamos el camino más corto
+            while (rotationAngle > 180) rotationAngle -= 360;
+            while (rotationAngle < -180) rotationAngle += 360;
+            
             document.getElementById('nav-arrow-container').style.transform = `rotate(${rotationAngle}deg)`;
         }
         
@@ -1847,19 +1873,27 @@
         function handleOrientation(event) {
             // Evento con orientación absoluta (brújula magnética)
             if (event.webkitCompassHeading !== undefined) {
-                // iOS usa webkitCompassHeading
+                // iOS usa webkitCompassHeading (0-360, 0=Norte, sentido horario)
                 deviceHeading = event.webkitCompassHeading;
             } else if (event.alpha !== null) {
-                // Android y otros usan alpha (0 = Norte, 90 = Este, 180 = Sur, 270 = Oeste)
-                deviceHeading = 360 - event.alpha;
+                // Android con deviceorientationabsolute
+                // alpha: 0 = Norte, aumenta en sentido horario
+                deviceHeading = event.alpha;
             }
         }
         
         function handleOrientationFallback(event) {
             // Fallback para dispositivos sin orientación absoluta
-            if (event.alpha !== null && !event.absolute) {
+            if (event.alpha !== null) {
                 // Orientación relativa - menos precisa
-                deviceHeading = 360 - event.alpha;
+                // En algunos dispositivos alpha va en sentido contrario
+                if (event.absolute === false) {
+                    // Si sabemos que es relativa, usamos tal cual
+                    deviceHeading = event.alpha;
+                } else {
+                    // Por defecto, asumimos comportamiento estándar
+                    deviceHeading = event.alpha;
+                }
             }
         }
         
