@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Visor Forestal ACOPAC - OSRO</title>
+    
+    <!-- Librerías desde CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+    <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #10b981; 
+            --primary-dark: #059669;  
+            --accent-color: #3b82f6;  
+            --text-main: #111827;     
+            --text-light: #4b5563;    
+            --bg-surface: #ffffff;
+            --shadow-float: 0 4px 12px rgba(0,0,0,0.15);
+            --radius-lg: 16px;
+            --touch-target: 48px; 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body, html { 
+            height: 100%; width: 100%; overflow: hidden; 
+            background: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            color: var(--text-main);
+            overscroll-behavior: none;
+        }
+        
+        #map { 
+            height: 100vh; width: 100%; z-index: 1; background: #e5e7eb; display: none; 
+            touch-action: none;
+        }
+
+        /* --- MODALES --- */
+        #legal-modal, #login-modal, #nav-setup-modal, #coord-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            z-index: 20000; justify-content: center; align-items: center; padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        #legal-modal { display: flex; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        #login-modal > div {
+            animation: slideUp 0.4s ease;
+        }
+        
+        #login-user:focus, #login-pin:focus {
+            outline: none;
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+        }
+        
+        #login-user:hover, #login-pin:hover {
+            border-color: #d1d5db !important;
+        }
+        
+        
+        .legal-content, .coord-content {
+            background: white; width: 100%; max-width: 600px;
+            border-radius: 12px; display: flex; flex-direction: column;
+            max-height: 90vh; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden; position: relative;
+        }
+        
+        .legal-header { 
+            padding: 24px 20px; 
+            border-bottom: 1px solid #e5e7eb; 
+            background: #f9fafb; 
+            text-align: center; 
+        }
+        .legal-header h2 { 
+            font-size: 20px; 
+            color: var(--primary-dark); 
+            margin: 0; 
+            font-weight: 900;
+            line-height: 1.3;
+        }
+        .legal-body { 
+            padding: 24px; 
+            overflow-y: auto; 
+            font-size: 14px; 
+            line-height: 1.6; 
+            color: #374151; 
+            text-align: left;
+        }
+        .legal-body p { margin-bottom: 16px; }
+        .legal-body strong { color: #111827; }
+        .legal-body ul { margin-left: 20px; margin-bottom: 16px; }
+        .legal-body li { margin-bottom: 8px; }
+        .legal-footer, .coord-btn-group { 
+            padding: 20px 24px; 
+            border-top: 1px solid #e5e7eb; 
+            background: #fff; 
+            display: flex; 
+            gap: 12px; 
+        }
+        
+        .btn-accept, .coord-btn-primary { 
+            background: var(--primary-color); 
+            color: white; 
+            border: none; 
+            padding: 14px 20px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            flex: 1; 
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        .btn-accept:hover, .coord-btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .btn-cancel, .coord-btn-cancel { 
+            background: #fee2e2; 
+            color: #b91c1c; 
+            border: 1px solid #fecaca; 
+            padding: 14px 20px; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            flex: 1; 
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        .btn-cancel:hover, .coord-btn-cancel:hover {
+            background: #fecaca;
+            transform: translateY(-1px);
+        }
+
+        /* --- UI MAPA --- */
+        .leaflet-touch .leaflet-bar { border: none; box-shadow: var(--shadow-float); border-radius: 12px; margin-bottom: 12px; }
+        .leaflet-touch .leaflet-bar a { width: var(--touch-target); height: var(--touch-target); line-height: var(--touch-target); font-size: 20px; color: #374151; background: white; }
+        .leaflet-top { top: 12px; } .leaflet-left { left: 12px; } .leaflet-right { right: 12px; } .leaflet-bottom { bottom: 24px; }
+        .leaflet-draw { display: none; }
+        
+        .leaflet-draw-toolbar { margin-top: 12px !important; box-shadow: var(--shadow-float) !important; border: none !important; border-radius: 12px !important; background: white; display: flex; flex-direction: column; }
+        .leaflet-draw-toolbar a { background-image: none !important; background-color: white !important; width: var(--touch-target) !important; height: var(--touch-target) !important; line-height: var(--touch-target) !important; border-bottom: 1px solid #f3f4f6 !important; display: flex !important; justify-content: center; align-items: center; color: #4b5563; }
+        .leaflet-draw-edit-edit::before { content: '✏️'; font-size: 16px; } 
+        .leaflet-draw-edit-remove::before { content: '🗑️'; font-size: 16px; }
+        .leaflet-draw-draw-polyline::before { content: '〰️'; font-size: 16px; } 
+        .leaflet-draw-draw-polygon::before { content: '⬠'; font-size: 16px; }
+        
+        /* --- MENU FLOTANTE COMPLETO (de super5/6) --- */
+        #filter-container {
+            position: absolute; 
+            top: 10px; 
+            right: 10px; 
+            z-index: 2000;
+            display: none;
+            width: 34px; 
+            flex-direction: column;
+            font-size: 12px; 
+            align-items: flex-end; 
+        }
+        
+        #filter-container.menu-open {
+            width: 240px; 
+            align-items: stretch; 
+        }
+
+        #menu-toggle-btn {
+            background: white;
+            color: #464646;
+            padding: 0;
+            border-radius: 4px;
+            border: 2px solid rgba(0,0,0,0.2);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 34px;
+            height: 34px;
+            transition: background-color 0.2s;
+        }
+        
+        #menu-toggle-btn:hover { background-color: #f4f4f4; }
+        
+        #menu-content {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 12px;
+            margin-top: 5px;
+            display: none;
+            border: none;
+            max-height: 80vh;
+            overflow-y: auto;
+            opacity: 0;
+        }
+        
+        #filter-container.menu-open #menu-content {
+            display: block;
+            animation: slideDown 0.2s ease-out forwards;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .menu-section {
+            margin-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+        }
+        .menu-section:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-light);
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .layer-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-main);
+            padding: 2px 0;
+        }
+        .layer-item:hover { color: var(--primary-color); }
+        .layer-item input[type="radio"],
+        .layer-item input[type="checkbox"] {
+            margin-right: 8px;
+            accent-color: var(--primary-color);
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+            color: var(--text-main);
+            outline: none;
+            margin-bottom: 8px;
+        }
+
+        .tool-btn {
+            display: block;
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-main);
+            font-weight: 500;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .tool-btn:hover { 
+            background: #f9fafb; 
+            border-color: var(--primary-color); 
+            color: var(--primary-dark);
+        }
+        
+        #reload-btn {
+            background: #f0fdf4;
+            color: var(--primary-dark);
+            border-color: #bbf7d0;
+            margin-top: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+        #reload-btn:hover { background: #dcfce7; }
+        
+        #help-btn {
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        /* --- ÁRBOLES Y POPUPS --- */
+        .tree-marker {
+            border-radius: 50%;
+            border: 2px solid #ffffff; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .tree-marker:hover { 
+            transform: scale(1.6); 
+            z-index: 1000 !important; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5); 
+            border-color: #f3f4f6;
+        }
+        
+        .status-aprobado { background-color: #7c3aed; } 
+        .status-denegado { background-color: #ef4444; } 
+        .status-unknown { background-color: #f59e0b; } 
+
+        .tree-label {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-weight: 700;
+            font-size: 11px;
+            color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            pointer-events: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .leaflet-popup-content-wrapper { 
+            border-radius: 12px; 
+            padding: 0; 
+            overflow: hidden;
+        } 
+        
+        .leaflet-popup-content { 
+            margin: 0; 
+            width: 300px !important; 
+        }
+        
+        .popup-header { 
+            background: #f9fafb; 
+            padding: 14px; 
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 600;
+            font-size: 14px;
+            color: #111827;
+        } 
+        
+        .popup-body { 
+            padding: 16px; 
+            max-height: 250px; 
+            overflow-y: auto; 
+            font-size: 13px; 
+            line-height: 1.5;
+        }
+        
+        .popup-row { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 6px 0; 
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 12px;
+        }
+        
+        .popup-row:last-child { border-bottom: none; }
+        
+        .popup-row span { color: #6b7280; }
+        .popup-row b { color: #111827; }
+
+        /* --- DASHBOARD NAVEGACIÓN (de SUPER7) --- */
+        #nav-dashboard {
+            background: #0f172a;
+            color: white;
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10002;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #nav-target-info {
+            position: absolute;
+            top: 40px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+        
+        #nav-arrow-container {
+            width: 60vw;
+            height: 60vw;
+            max-width: 280px;
+            max-height: 280px;
+            background: #1e293b;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 8px solid #334155;
+            margin-bottom: 40px;
+        }
+        
+        #nav-arrow {
+            font-size: 30vw;
+            color: var(--primary-color);
+            max-font-size: 120px;
+        }
+        
+        .nav-metrics {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+        
+        .nav-metric-item {
+            text-align: center;
+        }
+        
+        .nav-metric-label {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .nav-metric-val {
+            font-size: 32px;
+            font-weight: 800;
+        }
+        
+        .nav-metric-val.large {
+            font-size: 48px;
+            color: var(--primary-color);
+        }
+        
+        #nav-stop-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 18px 52px;
+            border-radius: 100px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            position: absolute;
+            bottom: 40px;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+            transition: all 0.2s;
+        }
+        
+        #nav-stop-btn:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .leaflet-control-scale-line { 
+            border: 2px solid #374151; 
+            border-top: none; 
+            background: rgba(255,255,255,0.9); 
+            font-weight: 700; 
+            font-size: 11px; 
+            margin-bottom: 5px; 
+            margin-right: 10px; 
+        }
+        
+        /* --- LOADER y NOTIFICACIONES --- */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #f9fafb;
+            z-index: 9998;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 350px;
+            background: #1f2937;
+            color: white;
+            text-align: center;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            z-index: 10000;
+            display: none;
+        }
+        
+        .notification.success { border-bottom: 4px solid var(--primary-color); }
+        .notification.error { border-bottom: 4px solid #ef4444; }
+        
+        /* --- PANEL DE AYUDA --- */
+        #help-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-float);
+            z-index: 10001;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        #help-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(2px);
+            z-index: 10000;
+        }
+        
+        /* --- LEGEND --- */
+        .leaflet-control.legend {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .legend h4 {
+            margin: 0 0 8px 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- AVISO LEGAL ACTUALIZADO -->
+    <div id="legal-modal">
+        <div class="legal-content">
+            <div class="legal-header">
+                <h2>VISOR DE APROVECHAMIENTO FORESTAL<br>ACOPAC-OSRO</h2>
+            </div>
+            <div class="legal-body">
+                <p><strong>LEA ATENTAMENTE ESTOS TÉRMINOS ANTES DE ACCEDER A LA PLATAFORMA.</strong></p>
+                
+                <p>Al ingresar sus credenciales y acceder a este sistema, usted (en adelante, el "Usuario/Funcionario") acepta obligarse por los siguientes términos y condiciones de uso del Visor de Aprovechamiento Forestal (en adelante, el "Software"), propiedad del Sistema Nacional de Áreas de Conservación (SINAC).</p>
+                
+                <p><strong>1. NATURALEZA Y PROPIEDAD</strong><br>
+                El Software es una herramienta de uso estrictamente interno e institucional. Los derechos patrimoniales de propiedad intelectual, que incluyen la explotación, distribución y uso exclusivo de la herramienta, pertenecen al SINAC como entidad titular de la obra creada bajo relación de servicio.</p>
+                
+                <p><strong>2. LICENCIA DE USO Y RESTRICCIONES</strong><br>
+                Se otorga al Funcionario una licencia personal, intransferible y no exclusiva para acceder al Software únicamente para fines oficiales de cumplimiento de sus funciones. Queda terminantemente prohibido:</p>
+                
+                <ul>
+                    <li>Compartir contraseñas o mecanismos de autenticación con terceros o compañeros no autorizados.</li>
+                    <li>Extraer masivamente datos para fines ajenos a la función pública.</li>
+                    <li>Publicar capturas de pantalla, archivos descargables o información contenida en el Software en redes sociales, medios de comunicación o cualquier plataforma externa.</li>
+                </ul>
+                
+                <p><strong>3. CONFIDENCIALIDAD DE LOS DATOS</strong><br>
+                El Software contiene información sensible y datos personales de administrados, protegidos por la Ley de Protección de la Persona frente al Tratamiento de sus Datos Personales (Ley 8968). El Funcionario asume la obligación legal de guardar el más estricto sigilo y confidencialidad sobre los datos aquí consultados.</p>
+                
+                <p><strong>4. RÉGIMEN DISCIPLINARIO Y SANCIONATORIO</strong><br>
+                El incumplimiento de estos términos, la negligencia en el resguardo de las credenciales o la divulgación desautorizada de información se considera una falta grave al deber de probidad y sigilo. Las sanciones aplicables incluyen:</p>
+                
+                <p><em>Administrativas:</em> Suspensión sin goce de salario o despido sin responsabilidad patronal, de conformidad con el artículo 113 de la Ley 62 Ver Ley 62 , Adiciona el reglamento interior del Congreso. 10-09-1834 y el artículo 14 de la Ley 7727 Ver Ley 7727, Resolución Alterna de Conflictos y Promoción de la Paz Social RAC. 09-12-1997.</p>
+                
+                <p><em>Civiles:</em> Responsabilidad personal del funcionario por los daños y perjuicios ocasionados al administrado o a la Administración Pública Ver Ley 7766, Tratado de Extradición con España. 24-04-1998.</p>
+                
+                <p><em>Penales:</em> Denuncia ante el Ministerio Público por delitos de violación de datos personales (Art. 196 bis Código Penal), revelación de secretos o acceso desautorizado a sistemas informáticos.</p>
+                
+                <p><strong>5. ACEPTACIÓN</strong><br>
+                El ingreso al Software constituye la aceptación plena y sin reservas de estos términos. El Funcionario declara ser consciente de las responsabilidades legales que conlleva el manejo de la información institucional aquí alojada.</p>
+                
+                <p><strong>6. CRÉDITOS Y PROPIEDAD INTELECTUAL</strong><br>
+                Esta herramienta digital ha sido desarrollada por Ing. Pablo César Sánchez Núñez, Encargado de Aprovechamiento Forestal de la Oficina Subregional de Orotina (ACOPAC-SINAC). De conformidad con los artículos 13 y 14 de la Ley de Derechos de Autor y Derechos Conexos (N° 6683), se reconoce al autor el derecho moral de paternidad sobre la obra, el cual es personalísimo, inalienable e irrenunciable, facultándole de forma perpetua a reivindicar su autoría y a exigir la mención de su nombre en toda reproducción o uso institucional. Si bien los derechos patrimoniales pertenecen al SINAC por la naturaleza de la relación laboral, el reconocimiento del autor intelectual es un derecho protegido constitucionalmente. Para soporte técnico o consultas, contactar a: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="34445556585b1a47555a575c514e74475d5a55571a535b1a5746">[email&#160;protected]</a></p>
+            </div>
+            <div class="legal-footer">
+                <button class="btn-cancel" onclick="closeApp()">Cancelar</button>
+                <button class="btn-accept" onclick="acceptLegal()">Aceptar e Ingresar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN (de SUPER7) -->
+    <div id="login-modal">
+        <div style="background: white; width: 100%; max-width: 420px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; position: relative;">
+            <!-- Header con gradiente -->
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 24px 60px 24px; text-align: center; position: relative;">
+                <!-- Logo circular -->
+                <div style="width: 120px; height: 120px; margin: 0 auto 20px auto; background: white; border-radius: 50%; padding: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
+                    <img src="data:image/webp;base64,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" 
+                         alt="SINAC Logo" 
+                         style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+                
+                <!-- Título -->
+                <h2 style="color: white; font-size: 24px; font-weight: 900; margin: 0 0 8px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    Visor Forestal ACOPAC
+                </h2>
+                <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0; font-weight: 500;">
+                    Sistema de Gestión Forestal - OSRO
+                </p>
+            </div>
+            
+            <!-- Cuerpo del formulario -->
+            <div style="padding: 32px 24px 24px 24px; margin-top: -30px; background: white; border-radius: 24px 24px 0 0; position: relative;">
+                <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display: block; font-size: 12px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                👤 Funcionario/a
+                            </label>
+                            <select id="login-user" style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 15px; font-weight: 500; color: #111827; background: white; cursor: pointer; transition: all 0.2s;">
+                                <option value="">Seleccione su usuario...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display: block; font-size: 12px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                🔑 PIN Seguro
+                            </label>
+                            <input type="password" 
+                                   id="login-pin" 
+                                   placeholder="•••" 
+                                   inputmode="numeric" 
+                                   maxlength="3"
+                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 15px; font-weight: 600; color: #111827; background: white; transition: all 0.2s;">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botón de ingreso -->
+                <button onclick="processLogin()" 
+                        style="width: 100%; padding: 16px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); margin-bottom: 16px;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.4)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)';">
+                    🚀 Ingresar al Sistema
+                </button>
+                
+                <!-- Botón volver -->
+                <button onclick="location.reload()" 
+                        style="width: 100%; padding: 12px; background: transparent; color: #6b7280; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                        onmouseover="this.style.background='#f9fafb'; this.style.borderColor='#d1d5db';"
+                        onmouseout="this.style.background='transparent'; this.style.borderColor='#e5e7eb';">
+                    ← Volver
+                </button>
+                
+                <!-- Footer info -->
+                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f3f4f6; text-align: center;">
+                    <p style="font-size: 11px; color: #9ca3af; margin: 0; line-height: 1.5;">
+                        🔒 Acceso seguro • Sistema SINAC<br>
+                        Oficina Subregional Orotina - ACOPAC
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MENÚ FLOTANTE COMPLETO (de super5/6) -->
+    <div id="filter-container">
+        <button id="menu-toggle-btn" onclick="toggleMenu()" title="Menú">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#464646" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+        
+        <div id="menu-content">
+            <!-- SECCIÓN FILTROS -->
+            <div class="menu-section">
+                <span class="section-title">Filtros</span>
+                <label for="expediente-filter" style="display: block; font-size: 11px; margin-bottom: 4px; color: var(--text-main);">Expediente</label>
+                <select id="expediente-filter">
+                    <option value="all">Todos los Expedientes</option>
+                </select>
+                <div id="filter-stats" style="margin-top: 4px; font-size: 10px; color: var(--text-light); text-align: right;">Cargando...</div>
+            </div>
+
+            <!-- SECCIÓN HERRAMIENTAS COMPLETAS -->
+            <div class="menu-section">
+                <span class="section-title">Herramientas</span>
+                <button class="tool-btn" onclick="openNavSetup()">🧭 Navegar a Árbol</button>
+                <button class="tool-btn" onclick="showCoordModal()">📍 Ir a Coordenada</button>
+                <button class="tool-btn" onclick="document.getElementById('gpx-input').click()">🗺️ Cargar GPX/KML</button>
+                <button class="tool-btn" onclick="toggleDrawingTools()">📐 Medición</button>
+                <button class="tool-btn" onclick="clearGPXLayers()">🗑️ Limpiar GPX</button>
+                <button class="tool-btn" onclick="clearDrawings()">🧹 Limpiar Mediciones</button>
+            </div>
+
+            <!-- SECCIÓN CAPAS -->
+            <div class="menu-section">
+                <span class="section-title">Capas</span>
+                <label class="layer-item">
+                    <input type="checkbox" id="layer-catastro" onchange="toggleOverlay('catastro', this.checked)">
+                    SNIT Catastro
+                </label>
+                <label class="layer-item">
+                    <input type="checkbox" id="show-labels" checked>
+                    Etiquetas Árboles
+                </label>
+            </div>
+
+            <!-- SECCIÓN MAPAS BASE -->
+            <div class="menu-section">
+                <span class="section-title">Mapas Base</span>
+                <label class="layer-item">
+                    <input type="radio" name="baselayer" value="google" checked onchange="changeBaseLayer('google')">
+                    Google Híbrido
+                </label>
+                <label class="layer-item">
+                    <input type="radio" name="baselayer" value="bing" onchange="changeBaseLayer('bing')">
+                    Bing Satélite
+                </label>
+                <label class="layer-item">
+                    <input type="radio" name="baselayer" value="esri" onchange="changeBaseLayer('esri')">
+                    Esri Satélite
+                </label>
+                <label class="layer-item">
+                    <input type="radio" name="baselayer" value="osm" onchange="changeBaseLayer('osm')">
+                    OpenStreetMap
+                </label>
+            </div>
+
+            <!-- ACCIONES FINALES -->
+            <div class="menu-section" style="border:none;">
+                <button class="tool-btn" id="reload-btn" onclick="manualReload()">🔄 Recargar Datos</button>
+                <button class="tool-btn" id="help-btn" onclick="showHelp()">❓ Ayuda</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD NAVEGACIÓN (de SUPER7) -->
+    <div id="nav-dashboard">
+        <div id="nav-target-info">Destino</div>
+        <div id="nav-arrow-container"><div id="nav-arrow">⬆</div></div>
+        <div class="nav-metrics">
+            <div class="nav-metric-item">
+                <div class="nav-metric-label">Distancia</div>
+                <div class="nav-metric-val large" id="nav-dist">0</div>
+            </div>
+        </div>
+        <div class="nav-metrics">
+            <div class="nav-metric-item">
+                <div class="nav-metric-label">Rumbo</div>
+                <div class="nav-metric-val" id="nav-bearing">0°</div>
+            </div>
+            <div class="nav-metric-item">
+                <div class="nav-metric-label">Precisión</div>
+                <div class="nav-metric-val" style="color:#10b981;" id="nav-accuracy">--</div>
+            </div>
+        </div>
+        <button id="nav-stop-btn" onclick="stopNavigation()">SALIR</button>
+    </div>
+
+    <!-- MODALES VARIOS -->
+    <div id="coord-modal">
+        <div class="coord-content">
+            <h3>📍 Coordenada CRTM05</h3>
+            <p style="font-size: 12px; color: #6b7280; margin-bottom: 15px;">Ingrese coordenadas o toque en el mapa</p>
+            <button class="tool-btn" onclick="enableMapPick()" style="margin-bottom: 15px;">🗺️ Tocar en Mapa</button>
+            <input type="text" id="coord-x" placeholder="Este (X)">
+            <input type="text" id="coord-y" placeholder="Norte (Y)" style="margin-top:10px;">
+            <div class="coord-btn-group" style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn-cancel" onclick="closeCoordModal()">Cancelar</button>
+                <button class="btn-accept" onclick="processCoordSearch()">Ir</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="nav-setup-modal">
+        <div class="coord-content">
+            <h3>🧭 Navegar a Árbol</h3>
+            <select id="nav-expediente" onchange="updateNavTrees()">
+                <option>Seleccione expediente...</option>
+            </select>
+            <select id="nav-tree">
+                <option>Seleccione árbol...</option>
+            </select>
+            <div class="coord-btn-group" style="display:flex; gap:10px;">
+                <button class="btn-cancel" onclick="closeNavSetup()">Cancelar</button>
+                <button class="btn-accept" onclick="startNavigation()">Navegar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOADER Y NOTIFICACIONES -->
+    <div id="loader">
+        <div class="spinner"></div>
+        <h2 style="font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 8px;">
+            Visor Forestal ACOPAC
+        </h2>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">
+            Sincronizando datos...
+        </p>
+        <div id="debug-log" style="margin-top: 20px; text-align: center; font-size: 12px; color: #6b7280;">
+            <span>🚀 Iniciando sistema...</span>
+        </div>
+        <button onclick="forceShow()" class="btn-accept" id="btn-force-show" style="display:none; margin-top: 20px;">
+            🗺️ Ir al Mapa
+        </button>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    
+    <input type="file" id="gpx-input" accept=".gpx,.kml" multiple style="display:none;">
+
+    <!-- PANEL DE AYUDA -->
+    <div id="help-panel">
+        <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 20px;">📖 Guía del Visor</h2>
+        <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 14px; font-weight: 600; color: var(--primary-dark); margin-bottom: 10px;">🗺️ Navegación</h3>
+            <ul style="margin-left: 20px; color: var(--text-main); line-height: 1.6; font-size: 13px;">
+                <li><strong>Zoom:</strong> Rueda del ratón o botones +/-</li>
+                <li><strong>Mover:</strong> Desliza el dedo o clic y arrastrar</li>
+                <li><strong>Ubicación GPS:</strong> Botón 📍 en controles</li>
+                <li><strong>Medición:</strong> Activar desde menú y dibujar en mapa</li>
+            </ul>
+        </div>
+        <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 14px; font-weight: 600; color: var(--primary-dark); margin-bottom: 10px;">🌳 Simbología</h3>
+            <ul style="margin-left: 20px; color: var(--text-main); line-height: 1.6; font-size: 13px;">
+                <li><span style="color: #7c3aed;">●</span> <strong>Púrpura:</strong> Aprobado</li>
+                <li><span style="color: #ef4444;">●</span> <strong>Rojo:</strong> Denegado</li>
+                <li><span style="color: #f59e0b;">●</span> <strong>Amarillo:</strong> Sin definir</li>
+            </ul>
+        </div>
+        <button onclick="document.getElementById('help-panel').style.display='none'; document.getElementById('help-overlay').style.display='none';" class="btn-accept" style="width: 100%; margin-top: 0;">Entendido</button>
+    </div>
+    
+    <div id="help-overlay" onclick="document.getElementById('help-panel').style.display='none'; this.style.display='none';"></div>
+    
+    <!-- MAPA -->
+    <div id="map"></div>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        window.addEventListener('unhandledrejection', function(event) {
+            console.warn("Error asíncrono:", event.reason);
+            const debugLog = document.getElementById('debug-log');
+            if (debugLog) {
+                debugLog.innerHTML += `<div style="color: #ef4444">[ERROR] ${event.reason}</div>`;
+            }
+            const btn = document.getElementById('btn-force-show');
+            if(btn) btn.style.display = 'block';
+        });
+
+        // ====================================================================
+        // CONFIGURACIÓN GLOBAL
+        // ====================================================================
+        
+        // USUARIOS (de SUPER7)
+        const USERS_DATABASE = {
+            "Pablo Sánchez": "920",
+            "Gerardo Chavarría": "325",
+            "Eduardo Rodríguez": "656",
+            "Paola Alvarado": "445",
+            "Ariel Lara": "988",
+            "Vivianas Arias": "757",
+            "Federico Berrocal": "235",
+            "Franklin Murillo": "145"
+        };
+        
+        // VARIABLES GLOBALES
+        let map, allMarkers = [], expedientesSet = new Set(), gpxLayers = [], drawnItems;
+        let currentUser = null;
+        let navWatchId, targetLatLng;
+        let layers = {};
+        let drawControl, drawToolbarVisible = false;
+        let userLocationMarker = null, userLocationCircle = null;
+        let autoUpdateTimer = null;
+        
+        // CONFIGURACIÓN
+        const CRTM05_DEF = '+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +units=m +no_defs';
+        const SHEET_ID_DATA = '1H416o9kATBiHPiVXqtCravU4_BnpnrYROCTi7G4BS1A'; 
+        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID_DATA}/export?format=csv`;
+        const SNIT_CATASTRO_URL = 'https://siri.snitcr.go.cr/Geoservicios/wms';
+        
+        const CORS_PROXIES = [
+            '', 'https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy?quest=', 'https://cors-anywhere.herokuapp.com/'
+        ];
+        
+        const AUTO_UPDATE_INTERVAL = 5 * 60 * 1000;
+
+        // ====================================================================
+        // FUNCIONES DE INICIO Y LOGIN (de SUPER7)
+        // ====================================================================
+        
+        function closeApp() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;text-align:center;font-family:sans-serif;padding:20px;"><h1>Visor Forestal ACOPAC - Sesión Cerrada</h1></div>';
+            }
+        }
+        
+        function acceptLegal() {
+            document.getElementById('legal-modal').style.display = 'none';
+            document.getElementById('login-modal').style.display = 'flex';
+            populateLoginSelect();
+        }
+
+        function populateLoginSelect() {
+            const select = document.getElementById('login-user');
+            select.innerHTML = '<option value="">Seleccione usuario...</option>';
+            Object.keys(USERS_DATABASE).sort().forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u; opt.textContent = u;
+                select.appendChild(opt);
+            });
+        }
+
+        function processLogin() {
+            const user = document.getElementById('login-user').value;
+            const pin = document.getElementById('login-pin').value;
+            
+            if(!user) {
+                showNotification("Seleccione un usuario", "error");
+                return;
+            }
+            
+            if(USERS_DATABASE[user] == pin) {
+                currentUser = user;
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('loader').style.display = 'flex';
+                waitForLibraries(initMap);
+            } else {
+                showNotification("PIN Incorrecto", "error");
+                document.getElementById('login-pin').value = '';
+            }
+        }
+
+        // ====================================================================
+        // FUNCIONES DE MAPA (Combinación de SUPER7 y super5/6)
+        // ====================================================================
+        
+        function initMap() {
+            if(map) return;
+            
+            // Extensión Quadkey para Bing (de super5/6)
+            L.TileLayer.Quadkey = L.TileLayer.extend({
+                getTileUrl: function(coords) {
+                    var i = coords.z, x = coords.x, y = coords.y;
+                    var quadKey = "";
+                    for (var j = i; j > 0; j--) {
+                        var digit = 0;
+                        var mask = 1 << (j - 1);
+                        if ((x & mask) != 0) digit += 1;
+                        if ((y & mask) != 0) digit += 2;
+                        quadKey += digit;
+                    }
+                    return L.Util.template(this._url, { q: quadKey });
+                }
+            });
+
+            map = L.map('map', { zoomControl: false, center: [9.9, -84.3], zoom: 9, maxZoom: 22, minZoom: 7 });
+            L.control.zoom({ position: 'topleft' }).addTo(map);
+            
+            // Escala
+            L.control.scale({
+                position: 'bottomleft',
+                imperial: false,
+                maxWidth: 150
+            }).addTo(map);
+
+            // Norte (de super5/6)
+            const NorthControl = L.Control.extend({
+                options: { position: 'bottomleft' },
+                onAdd: function() {
+                    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    div.style.background = 'none';
+                    div.style.border = 'none';
+                    div.style.boxShadow = 'none';
+                    div.style.marginBottom = '5px';
+                    div.innerHTML = `<div style="text-align:center;">
+                        <div style="font-weight:900; font-size:14px; color:#333; text-shadow: 2px 2px 0px white;">N</div>
+                        <svg width="30" height="40" viewBox="0 0 50 100" style="filter: drop-shadow(2px 2px 0px white);">
+                            <path d="M25 0 L50 90 L25 70 L0 90 Z" fill="#333" stroke="white" stroke-width="2"/>
+                        </svg>
+                    </div>`;
+                    return div;
+                }
+            });
+            map.addControl(new NorthControl());
+
+            // Capas base
+            layers.google = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { 
+                attribution: '© Google', maxZoom: 22, maxNativeZoom: 18 
+            });
+            layers.bing = new L.TileLayer.Quadkey('https://ecn.t3.tiles.virtualearth.net/tiles/a{q}.jpeg?g=1', { 
+                attribution: '© Bing', maxZoom: 22, maxNativeZoom: 19 
+            });
+            layers.esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { 
+                attribution: '© Esri', maxZoom: 22, maxNativeZoom: 19 
+            });
+            layers.osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+                attribution: '© OSM', maxZoom: 22, maxNativeZoom: 19 
+            });
+            
+            // Capa SNIT Catastro
+            layers.catastro = L.tileLayer.wms(SNIT_CATASTRO_URL, { 
+                layers: 'CATASTRO_2014', 
+                format: 'image/png', 
+                transparent: true, 
+                version: '1.3.0',
+                attribution: 'SNIT-SIRI', 
+                opacity: 1.0, 
+                maxZoom: 22, 
+                tiled: true, 
+                minZoom: 0, 
+                zIndex: 1000 
+            });
+
+            layers.google.addTo(map); // Default
+
+            // Grupo para dibujos y mediciones
+            drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+            
+            // Control de dibujo (toggle)
+            const DrawToggleControl = L.Control.extend({
+                options: { position: 'topleft' },
+                onAdd: function(map) {
+                    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    div.style.marginTop = '10px';
+                    
+                    const btn = L.DomUtil.create('a', 'leaflet-control-draw-toggle', div);
+                    btn.href = "#";
+                    btn.title = "Herramientas de Medición";
+                    btn.style.width = '44px';
+                    btn.style.height = '44px';
+                    btn.style.display = 'flex';
+                    btn.style.alignItems = 'center';
+                    btn.style.justifyContent = 'center';
+                    btn.style.backgroundColor = 'white';
+                    btn.style.cursor = 'pointer';
+                    btn.style.borderRadius = '8px';
+                    btn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                    
+                    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#464646" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
+
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        toggleDrawingTools();
+                    };
+                    return div;
+                }
+            });
+            map.addControl(new DrawToggleControl());
+
+            // Control GPS mejorado para móviles
+            const locateControl = L.Control.extend({
+                options: { position: 'topleft' },
+                onAdd: function() {
+                    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    div.style.marginTop = '60px';
+                    
+                    const btn = L.DomUtil.create('a', 'leaflet-control-gps', div);
+                    btn.href = "#";
+                    btn.title = "Mi ubicación GPS";
+                    btn.style.width = '44px';
+                    btn.style.height = '44px';
+                    btn.style.display = 'flex';
+                    btn.style.alignItems = 'center';
+                    btn.style.justifyContent = 'center';
+                    btn.style.backgroundColor = 'white';
+                    btn.style.cursor = 'pointer';
+                    btn.style.borderRadius = '8px';
+                    btn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                    
+                    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#464646" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>`;
+                    
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        
+                        // Verificar si geolocation está disponible
+                        if (!navigator.geolocation) {
+                            showNotification("❌ GPS no disponible en este navegador", "error");
+                            return;
+                        }
+                        
+                        // Verificar HTTPS (excepto localhost)
+                        const isSecure = window.location.protocol === 'https:' || 
+                                       window.location.hostname === 'localhost' || 
+                                       window.location.hostname === '127.0.0.1';
+                        
+                        if (!isSecure) {
+                            showNotification("⚠️ GPS requiere HTTPS. Abre el archivo con un servidor local.", "error");
+                            return;
+                        }
+                        
+                        // Cambiar ícono a loading
+                        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
+                        btn.style.animation = 'spin 1s linear infinite';
+                        
+                        showNotification("📍 Buscando ubicación GPS...", "success");
+                        
+                        // Usar geolocation directamente para mejor control de errores
+                        navigator.geolocation.getCurrentPosition(
+                            // Success
+                            function(position) {
+                                const lat = position.coords.latitude;
+                                const lon = position.coords.longitude;
+                                const accuracy = position.coords.accuracy;
+                                
+                                // Remover marcadores anteriores
+                                if(userLocationMarker) map.removeLayer(userLocationMarker);
+                                if(userLocationCircle) map.removeLayer(userLocationCircle);
+                                
+                                // Crear marcador de ubicación
+                                userLocationMarker = L.marker([lat, lon], {
+                                    icon: L.divIcon({
+                                        className: 'user-location-marker',
+                                        html: '<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.8); animation: pulse 2s infinite;"></div>',
+                                        iconSize: [22, 22],
+                                        iconAnchor: [11, 11]
+                                    })
+                                }).addTo(map).bindPopup("📍 Tu ubicación actual").openPopup();
+                                
+                                // Círculo de precisión
+                                userLocationCircle = L.circle([lat, lon], {
+                                    radius: accuracy,
+                                    color: '#3b82f6',
+                                    weight: 1,
+                                    opacity: 0.3,
+                                    fillOpacity: 0.1
+                                }).addTo(map);
+                                
+                                // Centrar mapa
+                                map.setView([lat, lon], 18);
+                                
+                                // Restaurar ícono
+                                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>`;
+                                btn.style.animation = '';
+                                
+                                setTimeout(() => {
+                                    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#464646" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>`;
+                                }, 2000);
+                                
+                                showNotification(`✅ Ubicación encontrada (±${Math.round(accuracy)}m)`, "success");
+                            },
+                            // Error
+                            function(error) {
+                                // Restaurar ícono
+                                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#464646" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>`;
+                                btn.style.animation = '';
+                                
+                                let errorMsg = "";
+                                switch(error.code) {
+                                    case error.PERMISSION_DENIED:
+                                        errorMsg = "❌ Permiso GPS denegado. Ve a Ajustes → Sitios web → Permisos → Ubicación";
+                                        break;
+                                    case error.POSITION_UNAVAILABLE:
+                                        errorMsg = "❌ Ubicación no disponible. Verifica que el GPS esté activado";
+                                        break;
+                                    case error.TIMEOUT:
+                                        errorMsg = "⏱️ Tiempo agotado. Intenta al aire libre con mejor señal GPS";
+                                        break;
+                                    default:
+                                        errorMsg = "❌ Error al obtener ubicación GPS";
+                                }
+                                showNotification(errorMsg, "error");
+                                console.error("GPS Error:", error);
+                            },
+                            // Options
+                            {
+                                enableHighAccuracy: true,
+                                timeout: 30000, // 30 segundos (más tiempo para móviles)
+                                maximumAge: 5000 // Aceptar ubicación de hace 5 segundos
+                            }
+                        );
+                    };
+                    return div;
+                }
+            });
+            
+            // Agregar animación CSS para el botón
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(1.1); opacity: 0.8; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            map.addControl(new locateControl());
+
+            // Control de dibujo real
+            drawControl = new L.Control.Draw({
+                position: 'topleft',
+                draw: {
+                    polyline: { 
+                        metric: true, 
+                        shapeOptions: { color: '#3b82f6', weight: 3 } 
+                    },
+                    polygon: { 
+                        showArea: true, 
+                        shapeOptions: { color: '#10b981', weight: 3, fillOpacity: 0.2 } 
+                    },
+                    circle: false,
+                    rectangle: false,
+                    marker: false,
+                    circlemarker: false
+                },
+                edit: { featureGroup: drawnItems, remove: true }
+            });
+            map.addControl(drawControl);
+
+            // Eventos del mapa
+            // map.on('locationfound', onLocationFound); // Ya no necesario - manejado en el botón GPS
+            // map.on('locationerror', () => showNotification('❌ Error al obtener ubicación GPS', 'error')); // Ya no necesario
+            
+            map.on(L.Draw.Event.CREATED, (e) => {
+                const layer = e.layer;
+                let content = '<div style="font-family: Inter, sans-serif; padding: 5px;"><strong>Medición:</strong><br>';
+                
+                if (e.layerType === 'polyline') {
+                    const distance = calculateLength(layer.getLatLngs());
+                    content += `Distancia: ${formatDistance(distance)}`;
+                } else if (e.layerType === 'polygon') {
+                    const area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                    content += `Área: ${formatArea(area)}`;
+                }
+                
+                content += '</div>';
+                layer.bindPopup(content);
+                drawnItems.addLayer(layer);
+                showNotification("Medición creada", "success");
+            });
+
+            map.on('zoomend', updateLabels);
+            map.on('moveend', updateLabels);
+
+            // Leyenda
+            const legend = L.control({ position: 'bottomright' });
+            legend.onAdd = function() {
+                const div = L.DomUtil.create('div', 'leaflet-control legend');
+                div.innerHTML = `
+                    <h4>Estado de Árboles</h4>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #7c3aed;"></div>
+                        <span>Aprobado</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #ef4444;"></div>
+                        <span>Denegado</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #f59e0b;"></div>
+                        <span>Sin definir</span>
+                    </div>
+                `;
+                return div;
+            };
+            legend.addTo(map);
+
+            // Eventos de filtros
+            document.getElementById('expediente-filter').addEventListener('change', (e) => filterMarkers(e.target.value));
+            document.getElementById('show-labels').addEventListener('change', updateLabels);
+
+            // Cargar datos
+            loadData();
+        }
+
+        // ====================================================================
+        // FUNCIONES DE DATOS Y CSV (de super5/6)
+        // ====================================================================
+        
+        function loadData() {
+            tryProxies(0, false)
+                .then(data => {
+                    processRows(data, false, new Date());
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('map').style.display = 'block';
+                    document.getElementById('filter-container').style.display = 'flex';
+                    startAutoUpdate();
+                })
+                .catch(e => {
+                    console.error("Error cargando datos:", e);
+                    showNotification("Error cargando árboles. Verifique conexión.", "error");
+                    document.getElementById('btn-force-show').style.display = 'block';
+                });
+        }
+
+        function tryProxies(idx, isAutoUpdate) {
+            if (idx >= CORS_PROXIES.length) {
+                return Promise.reject(new Error("Todos los proxies fallaron"));
+            }
+            
+            const url = CORS_PROXIES[idx] ? 
+                CORS_PROXIES[idx] + encodeURIComponent(CSV_URL + '&t=' + Date.now()) : 
+                CSV_URL + '&t=' + Date.now();
+            
+            return fetch(url).then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                const lastMod = r.headers.get('Last-Modified');
+                return r.text().then(txt => ({ txt, lastMod }));
+            }).then(({ txt, lastMod }) => {
+                return new Promise((resolve, reject) => {
+                    Papa.parse(txt, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: (res) => {
+                            if (res.data && res.data.length > 0) {
+                                resolve(res.data);
+                            } else {
+                                reject(new Error("CSV vacío"));
+                            }
+                        },
+                        error: (err) => reject(err)
+                    });
+                });
+            }).catch(() => tryProxies(idx + 1, isAutoUpdate));
+        }
+
+        function processRows(data, isUpdate, date) {
+            // Limpiar marcadores existentes
+            allMarkers.forEach(m => map.removeLayer(m));
+            allMarkers = [];
+            expedientesSet.clear();
+            
+            const bounds = L.latLngBounds();
+            const headers = Object.keys(data[0]);
+            const norm = headers.map(h => ({ o: h, n: h.trim().toLowerCase() }));
+            
+            // Encontrar columnas
+            let xCol = norm.find(h => h.n === 'x' || h.n === 'este' || h.n === 'coordenada x' || h.n === 'coord x')?.o;
+            if (!xCol) {
+                xCol = norm.find(h => (h.n.includes('x') || h.n.includes('este')) && !h.n.includes('expediente'))?.o;
+            }
+            
+            let yCol = norm.find(h => h.n === 'y' || h.n === 'norte' || h.n === 'coordenada y' || h.n === 'coord y')?.o;
+            if (!yCol) {
+                yCol = norm.find(h => h.n.includes('y') || h.n.includes('norte'))?.o;
+            }
+
+            const expCol = headers.find(k => k.toLowerCase().includes('expediente'));
+            const statusCol = headers.find(k => k.toLowerCase().includes('estado'));
+            const idCol = headers.find(k => k.toLowerCase().includes('numero') || k.toLowerCase().includes('id'));
+
+            data.forEach((row, i) => {
+                const x = parseCRTM05(row[xCol]);
+                const y = parseCRTM05(row[yCol]);
+                
+                if (isNaN(x) || isNaN(y)) return;
+                
+                try {
+                    const [lon, lat] = proj4(CRTM05_DEF, 'WGS84', [x, y]);
+                    if (lat < 7 || lat > 12) return;
+                    
+                    // Determinar estado
+                    let stClass = 'status-unknown';
+                    const stVal = row[statusCol] ? row[statusCol].toLowerCase() : '';
+                    if (stVal.includes('aprobado') || stVal.includes('ok')) stClass = 'status-aprobado';
+                    else if (stVal.includes('denegado') || stVal.includes('rechazado')) stClass = 'status-denegado';
+                    
+                    // Expediente
+                    const expVal = (expCol && row[expCol]) ? row[expCol].trim() : "Sin Expediente";
+                    if (expVal !== "Sin Expediente") expedientesSet.add(expVal);
+
+                    // Crear marcador
+                    const m = L.marker([lat, lon], {
+                        icon: L.divIcon({ 
+                            className: `tree-marker ${stClass}`, 
+                            iconSize: [14, 14],
+                            iconAnchor: [7, 7]
+                        }),
+                        expedienteData: expVal,
+                        treeId: row[idCol] || (i+1)
+                    }).addTo(map);
+
+                    // Popup detallado
+                    let popHTML = `<div class="popup-header">🌳 Árbol ${row[idCol] || (i+1)}</div>`;
+                    popHTML += `<div class="popup-body">`;
+                    
+                    Object.keys(row).forEach(k => {
+                        if (row[k] && k !== '_rowIndex') {
+                            popHTML += `<div class="popup-row"><span>${k}</span><b>${row[k]}</b></div>`;
+                        }
+                    });
+                    
+                    popHTML += `</div>`;
+                    popHTML += `<button class="btn-accept" style="width:100%; border-radius:0 0 12px 12px; margin-top:0;" onclick="startDirectNavigation(${lat},${lon},'${expVal} - ${row[idCol] || (i+1)}')">🧭 Navegar</button>`;
+                    
+                    m.bindPopup(popHTML);
+                    m.bindTooltip(`${row[idCol] || (i+1)}`, { 
+                        permanent: true, 
+                        direction: 'top', 
+                        className: 'tree-label', 
+                        offset: [0, -10] 
+                    });
+                    
+                    allMarkers.push(m);
+                    bounds.extend([lat, lon]);
+                } catch(e) {
+                    console.warn("Error procesando fila:", e);
+                }
+            });
+
+            // Actualizar filtro de expedientes
+            const sel = document.getElementById('expediente-filter');
+            const cur = sel.value;
+            sel.innerHTML = '<option value="all">Todos los Expedientes</option>';
+            Array.from(expedientesSet).sort().forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e; opt.textContent = e;
+                sel.appendChild(opt);
+            });
+            if (cur && Array.from(sel.options).some(o => o.value === cur)) {
+                sel.value = cur;
+            }
+
+            // Actualizar estadísticas
+            document.getElementById('filter-stats').textContent = `${allMarkers.length} árboles cargados`;
+
+            // Si es carga inicial, ajustar vista
+            if (allMarkers.length && !isUpdate) {
+                setTimeout(() => {
+                    map.invalidateSize();
+                    if (allMarkers.length > 0) {
+                        map.fitBounds(bounds, { padding: [50, 50] });
+                    }
+                }, 100);
+            } else if (isUpdate) {
+                filterMarkers(sel.value, false);
+                showNotification(`Datos actualizados: ${allMarkers.length} árboles`, "success");
+            }
+        }
+
+        // ====================================================================
+        // FUNCIONES DE UTILIDAD
+        // ====================================================================
+        
+        function toggleMenu() {
+            const container = document.getElementById('filter-container');
+            const btnIcon = document.querySelector('#menu-toggle-btn svg');
+            container.classList.toggle('menu-open');
+            
+            if(container.classList.contains('menu-open')) {
+                // Cambiar a icono X
+                btnIcon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+            } else {
+                // Cambiar a icono hamburguesa
+                btnIcon.innerHTML = '<line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>';
+            }
+        }
+        
+        function toggleDrawingTools() {
+            const toolbar = document.querySelector('.leaflet-draw');
+            if (toolbar) {
+                if (drawToolbarVisible) {
+                    toolbar.style.display = 'none';
+                    showNotification("Herramientas de medición ocultas", "success");
+                } else {
+                    toolbar.style.display = 'block';
+                    showNotification("Herramientas de medición activas", "success");
+                }
+                drawToolbarVisible = !drawToolbarVisible;
+            }
+        }
+        
+        function clearDrawings() {
+            drawnItems.clearLayers();
+            showNotification("Mediciones eliminadas", "success");
+        }
+        
+        function showNotification(msg, type) {
+            const n = document.getElementById('notification');
+            n.textContent = msg;
+            n.className = `notification ${type}`;
+            n.style.display = 'block';
+            setTimeout(() => n.style.display = 'none', 3000);
+        }
+        
+        function log(msg, type = 'info') {
+            const el = document.getElementById('debug-log');
+            if (!el) return;
+            const timestamp = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+            el.innerHTML += `<div style="color: ${type==='error'?'#ef4444':'#10b981'}">[${timestamp}] ${msg}</div>`;
+        }
+        
+        function forceShow() {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('map').style.display = 'block';
+            document.getElementById('filter-container').style.display = 'flex';
+            if (map) setTimeout(() => map.invalidateSize(), 100);
+        }
+        
+        function changeBaseLayer(type) {
+            ['google', 'bing', 'esri', 'osm'].forEach(k => {
+                if (map.hasLayer(layers[k])) map.removeLayer(layers[k]);
+            });
+            if (layers[type]) layers[type].addTo(map);
+        }
+        
+        function toggleOverlay(type, isChecked) {
+            if (isChecked) {
+                if (!map.hasLayer(layers[type])) layers[type].addTo(map);
+            } else {
+                if (map.hasLayer(layers[type])) map.removeLayer(layers[type]);
+            }
+        }
+        
+        function startAutoUpdate() {
+            if (autoUpdateTimer) clearInterval(autoUpdateTimer);
+            autoUpdateTimer = setInterval(() => {
+                tryProxies(0, true)
+                    .then(data => processRows(data, true, new Date()))
+                    .catch(err => console.warn("Error auto-update:", err));
+            }, AUTO_UPDATE_INTERVAL);
+        }
+        
+        function filterMarkers(val, shouldZoom = true) {
+            let cnt = 0;
+            const b = L.latLngBounds();
+            allMarkers.forEach(m => {
+                const vis = (val === 'all' || m.options.expedienteData === val);
+                if (vis) { 
+                    if (!map.hasLayer(m)) map.addLayer(m); 
+                    b.extend(m.getLatLng()); 
+                    cnt++; 
+                } else {
+                    map.removeLayer(m);
+                }
+            });
+            document.getElementById('filter-stats').textContent = `${cnt} árboles visibles`;
+            if (shouldZoom && cnt > 0) map.fitBounds(b, { padding: [50, 50] });
+            updateLabels();
+        }
+        
+        function updateLabels() {
+            if (!map) return;
+            const show = document.getElementById('show-labels').checked;
+            allMarkers.forEach(m => { 
+                if (map.hasLayer(m) && show && map.getZoom() > 14) {
+                    m.openTooltip();
+                } else {
+                    m.closeTooltip();
+                }
+            });
+        }
+        
+        function parseCRTM05(val) {
+            if (!val) return NaN;
+            let str = val.toString().trim();
+            if ((str.match(/\./g) || []).length > 1) str = str.replace(/\./g, '');
+            else if ((str.match(/\./g) || []).length === 1 && str.split('.')[1].length === 3) str = str.replace('.', '');
+            return parseFloat(str.replace(/[^0-9.-]/g, ''));
+        }
+        
+        function calculateLength(ll) { 
+            let l = 0; 
+            for(let i = 0; i < ll.length - 1; i++) {
+                l += ll[i].distanceTo(ll[i+1]);
+            }
+            return l; 
+        }
+        
+        function formatDistance(m) { 
+            return m < 1000 ? m.toFixed(2) + ' m' : (m/1000).toFixed(2) + ' km'; 
+        }
+        
+        function formatArea(s) { 
+            return s < 10000 ? s.toFixed(2) + ' m²' : (s/10000).toFixed(2) + ' ha'; 
+        }
+        
+        function clearGPXLayers() { 
+            gpxLayers.forEach(l => map.removeLayer(l)); 
+            gpxLayers = []; 
+            showNotification('Capas GPX eliminadas', 'success'); 
+        }
+        
+        function manualReload() {
+            const btn = document.getElementById('reload-btn');
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Cargando...';
+            btn.disabled = true;
+            
+            loadData();
+            
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }, 2000);
+        }
+        
+        function onLocationFound(e) {
+            if(userLocationMarker) map.removeLayer(userLocationMarker);
+            if(userLocationCircle) map.removeLayer(userLocationCircle);
+            
+            userLocationMarker = L.marker(e.latlng, {
+                icon: L.divIcon({
+                    className: 'user-location-marker',
+                    html: '<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);"></div>',
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                })
+            }).addTo(map).bindPopup("Tu ubicación").openPopup();
+            
+            userLocationCircle = L.circle(e.latlng, {
+                radius: e.accuracy,
+                color: '#3b82f6',
+                weight: 1,
+                opacity: 0.3,
+                fillOpacity: 0.1
+            }).addTo(map);
+            
+            showNotification(`GPS: Precisión ±${Math.round(e.accuracy)}m`, "success");
+        }
+
+        // ====================================================================
+        // FUNCIONES DE NAVEGACIÓN (de SUPER7)
+        // ====================================================================
+        
+        function openNavSetup() {
+            const s = document.getElementById('nav-expediente');
+            s.innerHTML = '<option value="">Seleccione expediente...</option>';
+            Array.from(expedientesSet).sort().forEach(e => {
+                s.innerHTML += `<option value="${e}">${e}</option>`;
+            });
+            document.getElementById('nav-setup-modal').style.display = 'flex';
+            if(document.getElementById('filter-container').classList.contains('menu-open')) {
+                toggleMenu();
+            }
+        }
+        
+        function updateNavTrees() {
+            const exp = document.getElementById('nav-expediente').value;
+            const s = document.getElementById('nav-tree');
+            s.innerHTML = '<option value="">Seleccione árbol...</option>';
+            
+            allMarkers
+                .filter(m => m.options.expedienteData === exp)
+                .forEach(m => {
+                    s.innerHTML += `<option value="${m.getLatLng().lat},${m.getLatLng().lng}">Árbol ${m.options.treeId}</option>`;
+                });
+        }
+        
+        function startDirectNavigation(lat, lng, label) {
+            targetLatLng = L.latLng(lat, lng);
+            document.getElementById('nav-target-info').textContent = label;
+            map.closePopup();
+            closeNavSetup();
+            document.getElementById('nav-dashboard').style.display = 'flex';
+            
+            if (navigator.geolocation) {
+                navWatchId = navigator.geolocation.watchPosition(
+                    updateNavigation,
+                    (error) => {
+                        console.error("Error GPS:", error);
+                        showNotification("Error en GPS", "error");
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 0,
+                        timeout: 5000
+                    }
+                );
+            }
+        }
+        
+        function startNavigation() {
+            const val = document.getElementById('nav-tree').value;
+            if (!val) {
+                showNotification("Seleccione un árbol", "error");
+                return;
+            }
+            
+            const [lat, lng] = val.split(',').map(Number);
+            const exp = document.getElementById('nav-expediente').value;
+            const treeId = document.getElementById('nav-tree').selectedOptions[0]?.text || "Destino";
+            
+            startDirectNavigation(lat, lng, `${exp} - ${treeId}`);
+            closeNavSetup();
+        }
+        
+        function updateNavigation(pos) {
+            const user = L.latLng(pos.coords.latitude, pos.coords.longitude);
+            const dist = user.distanceTo(targetLatLng);
+            
+            document.getElementById('nav-dist').textContent = Math.round(dist);
+            document.getElementById('nav-accuracy').textContent = `±${Math.round(pos.coords.accuracy)}m`;
+            
+            // Calcular rumbo
+            const y = Math.sin(targetLatLng.lng - user.lng) * Math.cos(targetLatLng.lat);
+            const x = Math.cos(user.lat) * Math.sin(targetLatLng.lat) - 
+                     Math.sin(user.lat) * Math.cos(targetLatLng.lat) * Math.cos(targetLatLng.lng - user.lng);
+            const brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+            
+            document.getElementById('nav-bearing').textContent = Math.round(brng) + '°';
+            document.getElementById('nav-arrow-container').style.transform = `rotate(${brng}deg)`;
+        }
+        
+        function stopNavigation() {
+            if (navWatchId && navigator.geolocation) {
+                navigator.geolocation.clearWatch(navWatchId);
+            }
+            document.getElementById('nav-dashboard').style.display = 'none';
+            showNotification("Navegación detenida", "success");
+        }
+
+        // ====================================================================
+        // FUNCIONES DE COORDENADAS
+        // ====================================================================
+        
+        function showCoordModal() { 
+            document.getElementById('coord-modal').style.display = 'flex'; 
+            document.getElementById('coord-x').focus(); 
+        }
+        
+        function closeCoordModal() { 
+            document.getElementById('coord-modal').style.display = 'none'; 
+        }
+        
+        function closeNavSetup() { 
+            document.getElementById('nav-setup-modal').style.display = 'none'; 
+        }
+        
+        function processCoordSearch() {
+            const x = parseCRTM05(document.getElementById('coord-x').value);
+            const y = parseCRTM05(document.getElementById('coord-y').value);
+            
+            if(isNaN(x) || isNaN(y)) {
+                showNotification("Coordenadas inválidas", "error");
+                return;
+            }
+            
+            try {
+                const [lon, lat] = proj4(CRTM05_DEF, 'WGS84', [x, y]);
+                
+                if (lat < 7 || lat > 12 || lon < -86 || lon > -82) {
+                    showNotification("Coordenadas fuera de Costa Rica", "error");
+                    return;
+                }
+
+                const newMarker = L.marker([lat, lon], {
+                    icon: L.divIcon({
+                        className: 'custom-search-marker',
+                        html: '<div style="background-color: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);"></div>',
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12]
+                    })
+                }).addTo(map);
+
+                const popupContent = `<div style="font-family: Inter, sans-serif; padding: 5px;">
+                    <b>📍 Punto CRTM05</b><br>
+                    X: ${x.toLocaleString('es-CR')}<br>
+                    Y: ${y.toLocaleString('es-CR')}<br>
+                    Lat: ${lat.toFixed(6)}<br>
+                    Lon: ${lon.toFixed(6)}
+                </div>`;
+                
+                newMarker.bindPopup(popupContent);
+                drawnItems.addLayer(newMarker);
+                
+                map.setView([lat, lon], 18);
+                newMarker.openPopup();
+                
+                closeCoordModal();
+                if(document.getElementById('filter-container').classList.contains('menu-open')) {
+                    toggleMenu();
+                }
+                showNotification('📍 Coordenada agregada al mapa', 'success');
+
+            } catch (e) { 
+                showNotification("Error en conversión de coordenadas", "error");
+            }
+        }
+        
+        function enableMapPick() {
+            closeCoordModal();
+            showNotification("Toque en el mapa para seleccionar coordenadas", "success");
+            
+            const clickHandler = (e) => {
+                map.off('click', clickHandler);
+                const [x, y] = proj4('WGS84', CRTM05_DEF, [e.latlng.lng, e.latlng.lat]);
+                document.getElementById('coord-x').value = x.toFixed(2);
+                document.getElementById('coord-y').value = y.toFixed(2);
+                showCoordModal();
+            };
+            
+            map.once('click', clickHandler);
+        }
+
+        // ====================================================================
+        // FUNCIONES DE GPX/KML (de super5/6)
+        // ====================================================================
+        
+        document.getElementById('gpx-input').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        let geoJson;
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(ev.target.result, 'text/xml');
+                        
+                        if (file.name.endsWith('.gpx')) {
+                            geoJson = toGeoJSON.gpx(xmlDoc);
+                        } else if (file.name.endsWith('.kml')) {
+                            geoJson = toGeoJSON.kml(xmlDoc);
+                        } else {
+                            showNotification("Formato no soportado: " + file.name, "error");
+                            return;
+                        }
+                        
+                        const layer = L.geoJSON(geoJson, {
+                            style: function(feature) {
+                                return {
+                                    color: '#ef4444',
+                                    weight: 3,
+                                    opacity: 0.8,
+                                    fillColor: '#f87171',
+                                    fillOpacity: 0.2
+                                };
+                            },
+                            pointToLayer: function(feature, latlng) {
+                                return L.circleMarker(latlng, {
+                                    radius: 6,
+                                    fillColor: "#ef4444",
+                                    color: "#fff",
+                                    weight: 2,
+                                    opacity: 1,
+                                    fillOpacity: 0.8
+                                });
+                            },
+                            onEachFeature: function(feature, layer) {
+                                if (feature.properties && feature.properties.name) {
+                                    layer.bindPopup(`<b>${feature.properties.name}</b>`);
+                                }
+                            }
+                        }).addTo(map);
+                        
+                        gpxLayers.push(layer);
+                        map.fitBounds(layer.getBounds());
+                        showNotification(`Archivo ${file.name} cargado`, "success");
+                        
+                    } catch (error) {
+                        console.error("Error procesando archivo:", error);
+                        showNotification(`Error cargando ${file.name}`, "error");
+                    }
+                };
+                reader.readAsText(file);
+            });
+            
+            // Reset input
+            e.target.value = '';
+        });
+
+        // ====================================================================
+        // FUNCIONES DE AYUDA
+        // ====================================================================
+        
+        function showHelp() { 
+            document.getElementById('help-panel').style.display = 'block'; 
+            document.getElementById('help-overlay').style.display = 'block'; 
+        }
+        
+        function waitForLibraries(cb) {
+            if(typeof L !== 'undefined' && typeof Papa !== 'undefined' && typeof proj4 !== 'undefined') {
+                cb();
+            } else {
+                setTimeout(() => waitForLibraries(cb), 100);
+            }
+        }
+    </script>
+</body>
+</html>
