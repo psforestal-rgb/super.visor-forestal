@@ -818,6 +818,20 @@
                     OpenStreetMap
                 </label>
             </div>
+            
+            <!-- SECCIÓN SISTEMA -->
+            <div class="menu-section">
+                <span class="section-title">Sistema</span>
+                <div id="cache-info" style="font-size: 11px; color: #6b7280; padding: 8px; background: #f9fafb; border-radius: 6px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                        <span id="cache-status-icon">📡</span>
+                        <span id="cache-status-text" style="font-weight: 600;">Conectado</span>
+                    </div>
+                    <div id="cache-last-update" style="font-size: 10px; color: #9ca3af;">
+                        Última actualización: --
+                    </div>
+                </div>
+            </div>
 
             <!-- ACCIONES FINALES -->
             <div class="menu-section" style="border:none;">
@@ -1378,19 +1392,174 @@
         // ====================================================================
         
         function loadData() {
-            tryProxies(0, false)
-                .then(data => {
-                    processRows(data, false, new Date());
-                    document.getElementById('loader').style.display = 'none';
-                    document.getElementById('map').style.display = 'block';
-                    document.getElementById('filter-container').style.display = 'flex';
-                    startAutoUpdate();
-                })
-                .catch(e => {
-                    console.error("Error cargando datos:", e);
-                    showNotification("Error cargando árboles. Verifique conexión.", "error");
-                    document.getElementById('btn-force-show').style.display = 'block';
-                });
+            // Intentar cargar desde caché primero
+            const cachedData = loadFromCache();
+            
+            if (cachedData) {
+                // Tenemos datos en caché
+                console.log("📦 Cargando desde caché...");
+                updateCacheStatus('cache', cachedData.timestamp);
+                processRows(cachedData.data, false, new Date(cachedData.timestamp));
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('map').style.display = 'block';
+                document.getElementById('filter-container').style.display = 'flex';
+                
+                // Intentar actualizar en segundo plano si hay internet
+                if (navigator.onLine) {
+                    tryProxies(0, true)
+                        .then(data => {
+                            console.log("🔄 Datos actualizados desde servidor");
+                            saveToCache(data);
+                            processRows(data, true, new Date());
+                            updateCacheStatus('online', new Date());
+                            showNotification("✅ Datos actualizados", "success");
+                            startAutoUpdate();
+                        })
+                        .catch(e => {
+                            console.warn("No se pudo actualizar desde servidor, usando caché");
+                            updateCacheStatus('cache', cachedData.timestamp);
+                        });
+                } else {
+                    updateCacheStatus('offline', cachedData.timestamp);
+                    showNotification("📦 Usando datos en caché (sin internet)", "info");
+                }
+            } else {
+                // No hay caché, cargar desde servidor (obligatorio)
+                console.log("📡 Cargando desde servidor...");
+                updateCacheStatus('loading');
+                tryProxies(0, false)
+                    .then(data => {
+                        saveToCache(data);
+                        processRows(data, false, new Date());
+                        document.getElementById('loader').style.display = 'none';
+                        document.getElementById('map').style.display = 'block';
+                        document.getElementById('filter-container').style.display = 'flex';
+                        updateCacheStatus('online', new Date());
+                        startAutoUpdate();
+                    })
+                    .catch(e => {
+                        console.error("Error cargando datos:", e);
+                        showNotification("❌ Error cargando árboles. Sin conexión y sin caché.", "error");
+                        updateCacheStatus('error');
+                        document.getElementById('btn-force-show').style.display = 'block';
+                    });
+            }
+        }
+        
+        // ====================================================================
+        // FUNCIONES DE LOCALSTORAGE (MODO OFFLINE)
+        // ====================================================================
+        
+        function saveToCache(data) {
+            try {
+                const cacheObject = {
+                    data: data,
+                    timestamp: new Date().toISOString(),
+                    version: '1.0'
+                };
+                localStorage.setItem('visor_acopac_cache', JSON.stringify(cacheObject));
+                console.log("💾 Datos guardados en caché local");
+                return true;
+            } catch (e) {
+                console.error("Error guardando en caché:", e);
+                // LocalStorage lleno o bloqueado
+                if (e.name === 'QuotaExceededError') {
+                    console.warn("⚠️ LocalStorage lleno, limpiando caché antiguo...");
+                    localStorage.removeItem('visor_acopac_cache');
+                    try {
+                        localStorage.setItem('visor_acopac_cache', JSON.stringify(cacheObject));
+                        return true;
+                    } catch (e2) {
+                        console.error("No se pudo guardar en caché incluso después de limpiar");
+                        return false;
+                    }
+                }
+                return false;
+            }
+        }
+        
+        function loadFromCache() {
+            try {
+                const cached = localStorage.getItem('visor_acopac_cache');
+                if (!cached) return null;
+                
+                const cacheObject = JSON.parse(cached);
+                
+                // Verificar que el caché no sea muy antiguo (opcional: máximo 7 días)
+                const cacheDate = new Date(cacheObject.timestamp);
+                const now = new Date();
+                const daysDiff = (now - cacheDate) / (1000 * 60 * 60 * 24);
+                
+                if (daysDiff > 7) {
+                    console.warn("⚠️ Caché muy antiguo (>7 días), ignorando...");
+                    localStorage.removeItem('visor_acopac_cache');
+                    return null;
+                }
+                
+                console.log("📦 Caché encontrado:", cacheObject.timestamp);
+                return cacheObject;
+            } catch (e) {
+                console.error("Error leyendo caché:", e);
+                return null;
+            }
+        }
+        
+        function updateCacheStatus(status, timestamp) {
+            const statusIcon = document.getElementById('cache-status-icon');
+            const statusText = document.getElementById('cache-status-text');
+            const lastUpdate = document.getElementById('cache-last-update');
+            
+            if (!statusIcon || !statusText || !lastUpdate) return;
+            
+            switch (status) {
+                case 'online':
+                    statusIcon.textContent = '🟢';
+                    statusText.textContent = 'En línea';
+                    statusText.style.color = '#10b981';
+                    break;
+                case 'offline':
+                    statusIcon.textContent = '🔴';
+                    statusText.textContent = 'Sin conexión';
+                    statusText.style.color = '#ef4444';
+                    break;
+                case 'cache':
+                    statusIcon.textContent = '📦';
+                    statusText.textContent = 'Usando caché';
+                    statusText.style.color = '#f59e0b';
+                    break;
+                case 'loading':
+                    statusIcon.textContent = '⏳';
+                    statusText.textContent = 'Cargando...';
+                    statusText.style.color = '#6b7280';
+                    break;
+                case 'error':
+                    statusIcon.textContent = '❌';
+                    statusText.textContent = 'Error';
+                    statusText.style.color = '#ef4444';
+                    break;
+            }
+            
+            if (timestamp) {
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diff = now - date;
+                const minutes = Math.floor(diff / 60000);
+                const hours = Math.floor(diff / 3600000);
+                const days = Math.floor(diff / 86400000);
+                
+                let timeText;
+                if (minutes < 1) {
+                    timeText = 'Hace un momento';
+                } else if (minutes < 60) {
+                    timeText = `Hace ${minutes} min`;
+                } else if (hours < 24) {
+                    timeText = `Hace ${hours}h`;
+                } else {
+                    timeText = `Hace ${days} días`;
+                }
+                
+                lastUpdate.textContent = `Última actualización: ${timeText}`;
+            }
         }
 
         function tryProxies(idx, isAutoUpdate) {
@@ -1695,15 +1864,42 @@
         function manualReload() {
             const btn = document.getElementById('reload-btn');
             const originalText = btn.textContent;
-            btn.textContent = '⏳ Cargando...';
+            btn.textContent = '⏳ Actualizando...';
             btn.disabled = true;
             
-            loadData();
+            updateCacheStatus('loading');
             
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }, 2000);
+            // Forzar carga desde servidor (ignorar caché)
+            tryProxies(0, false)
+                .then(data => {
+                    saveToCache(data);
+                    processRows(data, true, new Date());
+                    updateCacheStatus('online', new Date());
+                    showNotification("✅ Datos actualizados exitosamente", "success");
+                    
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }, 1000);
+                })
+                .catch(e => {
+                    console.error("Error actualizando:", e);
+                    
+                    // Si falla, intentar usar caché
+                    const cachedData = loadFromCache();
+                    if (cachedData) {
+                        updateCacheStatus('offline', cachedData.timestamp);
+                        showNotification("⚠️ Sin conexión. Usando datos en caché.", "info");
+                    } else {
+                        updateCacheStatus('error');
+                        showNotification("❌ Error de conexión y sin caché disponible", "error");
+                    }
+                    
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }, 1000);
+                });
         }
         
         function onLocationFound(e) {
