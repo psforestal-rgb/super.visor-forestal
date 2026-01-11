@@ -699,7 +699,7 @@
                             <label style="display: block; font-size: 12px; font-weight: 700; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
                                 👤 Funcionario/a
                             </label>
-                            <select id="login-user" style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 15px; font-weight: 500; color: #111827; background: white; cursor: pointer; transition: all 0.2s;">
+                            <select id="login-user" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 11px; font-weight: 500; color: #111827; background: white; cursor: pointer; transition: all 0.2s;">
                                 <option value="">Seleccione su usuario...</option>
                             </select>
                         </div>
@@ -835,6 +835,7 @@
 
             <!-- ACCIONES FINALES -->
             <div class="menu-section" style="border:none;">
+                <button class="tool-btn" id="admin-btn" onclick="showAdminPanel()" style="display:none; background:linear-gradient(135deg, #ef4444, #dc2626); color:white;">⚙️ Administración</button>
                 <button class="tool-btn" id="reload-btn" onclick="manualReload()">🔄 Recargar Datos</button>
                 <button class="tool-btn" id="help-btn" onclick="showHelp()">❓ Ayuda</button>
             </div>
@@ -947,6 +948,50 @@
     
     <div id="help-overlay" onclick="document.getElementById('help-panel').style.display='none'; this.style.display='none';"></div>
     
+    <!-- MODAL DE ADMINISTRACIÓN -->
+    <div id="admin-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; justify-content:center; align-items:center;">
+        <div style="background:white; width:90%; max-width:600px; border-radius:16px; padding:32px; max-height:90vh; overflow-y:auto;">
+            <h2 style="font-size:22px; font-weight:700; color:#111827; margin-bottom:24px; display:flex; align-items:center; gap:10px;">
+                ⚙️ Panel de Administración
+            </h2>
+            
+            <!-- Configuración de URL de datos de árboles -->
+            <div style="margin-bottom:24px; padding:20px; background:#f9fafb; border-radius:12px;">
+                <h3 style="font-size:16px; font-weight:600; color:#374151; margin-bottom:12px;">📊 URL de Datos de Árboles</h3>
+                <p style="font-size:12px; color:#6b7280; margin-bottom:12px;">Ingrese el ID del Google Sheet (valores separados por comas):</p>
+                <input type="text" id="admin-sheet-id" placeholder="1H416o9kATBiHPiVXqtCravU4_BnpnrYROCTi7G4BS1A" style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:monospace; margin-bottom:12px;">
+                <button onclick="saveDataSheetConfig()" class="btn-accept" style="width:100%;">💾 Guardar URL de Datos</button>
+            </div>
+            
+            <!-- Configuración de URL de usuarios -->
+            <div style="margin-bottom:24px; padding:20px; background:#f9fafb; border-radius:12px;">
+                <h3 style="font-size:16px; font-weight:600; color:#374151; margin-bottom:12px;">👥 URL de Usuarios</h3>
+                <p style="font-size:12px; color:#6b7280; margin-bottom:12px;">URL del CSV publicado de usuarios (Columna A: USUARIO, Columna B: PIN):</p>
+                <input type="text" id="admin-users-csv" placeholder="https://docs.google.com/..." style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:11px; font-family:monospace; margin-bottom:12px;">
+                <button onclick="saveUsersCSVConfig()" class="btn-accept" style="width:100%;">💾 Guardar URL de Usuarios</button>
+            </div>
+            
+            <!-- Lista de usuarios actuales -->
+            <div style="margin-bottom:24px; padding:20px; background:#f9fafb; border-radius:12px;">
+                <h3 style="font-size:16px; font-weight:600; color:#374151; margin-bottom:12px;">📋 Usuarios Actuales</h3>
+                <div id="admin-users-list" style="max-height:200px; overflow-y:auto; font-size:12px; color:#374151; line-height:1.8;">
+                    Cargando...
+                </div>
+                <button onclick="refreshUsersList()" class="btn-accept" style="width:100%; margin-top:12px;">🔄 Recargar Usuarios</button>
+            </div>
+            
+            <!-- Botones de acción -->
+            <div style="display:flex; gap:12px;">
+                <button onclick="closeAdminModal()" style="flex:1; padding:14px; background:#e5e7eb; color:#374151; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;">
+                    ← Cerrar
+                </button>
+                <button onclick="location.reload()" class="btn-accept" style="flex:1;">
+                    🔄 Reiniciar Sistema
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- MAPA -->
     <div id="map"></div>
 
@@ -965,21 +1010,20 @@
         // CONFIGURACIÓN GLOBAL
         // ====================================================================
         
-        // USUARIOS (de SUPER7)
-        const USERS_DATABASE = {
-            "Pablo Sánchez": "920",
-            "Gerardo Chavarría": "325",
-            "Eduardo Rodríguez": "656",
-            "Paola Alvarado": "445",
-            "Ariel Lara": "988",
-            "Vivianas Arias": "757",
-            "Federico Berrocal": "235",
-            "Franklin Murillo": "145"
+        // USUARIOS - SOLO ADMINISTRADOR EN CÓDIGO
+        const ADMIN_USER = {
+            email: "pablo.sanchez@sinac.go.cr",
+            pin: "920",
+            isAdmin: true
         };
+        
+        // Base de datos de usuarios (se carga dinámicamente)
+        let USERS_DATABASE = {};
         
         // VARIABLES GLOBALES
         let map, allMarkers = [], expedientesSet = new Set(), gpxLayers = [], drawnItems;
         let currentUser = null;
+        let currentUserIsAdmin = false;
         let navWatchId, targetLatLng;
         let deviceHeading = 0; // Orientación del dispositivo en grados
         let targetBearing = 0; // Rumbo hacia el objetivo
@@ -991,8 +1035,12 @@
         
         // CONFIGURACIÓN
         const CRTM05_DEF = '+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +units=m +no_defs';
-        const SHEET_ID_DATA = '1H416o9kATBiHPiVXqtCravU4_BnpnrYROCTi7G4BS1A'; 
-        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID_DATA}/export?format=csv`;
+        
+        // URLs configurables (guardadas en LocalStorage)
+        let SHEET_ID_DATA = localStorage.getItem('config_sheet_id') || '1H416o9kATBiHPiVXqtCravU4_BnpnrYROCTi7G4BS1A';
+        let CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID_DATA}/export?format=csv`;
+        let USERS_CSV_URL = localStorage.getItem('config_users_csv') || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQLB8fXSASDCtTb710K_Gjb3a6DnJUZGaSRkXAR5lHhBfF88LcJUQyC1-eqIAFi-XKdpcVHksD-ckAv/pub?gid=0&single=true&output=csv';
+        
         const SNIT_CATASTRO_URL = 'https://siri.snitcr.go.cr/Geoservicios/wms';
         
         const CORS_PROXIES = [
@@ -1017,7 +1065,174 @@
         function acceptLegal() {
             document.getElementById('legal-modal').style.display = 'none';
             document.getElementById('login-modal').style.display = 'flex';
-            populateLoginSelect();
+            loadUsersFromCSV();
+        }
+        
+        // ====================================================================
+        // FUNCIONES DE ADMINISTRACIÓN
+        // ====================================================================
+        
+        function loadUsersFromCSV() {
+            // Primero agregar el admin
+            USERS_DATABASE = {};
+            USERS_DATABASE[ADMIN_USER.email] = ADMIN_USER.pin;
+            
+            console.log("📥 Intentando cargar usuarios desde:", USERS_CSV_URL);
+            
+            // Función para probar con diferentes proxies
+            function tryLoadWithProxy(proxyIndex) {
+                if (proxyIndex >= CORS_PROXIES.length) {
+                    console.error("❌ Todos los proxies fallaron al cargar usuarios");
+                    showNotification("⚠️ No se pudieron cargar usuarios. Solo admin disponible.", "info");
+                    populateLoginSelect();
+                    return;
+                }
+                
+                const url = CORS_PROXIES[proxyIndex] ? 
+                    CORS_PROXIES[proxyIndex] + encodeURIComponent(USERS_CSV_URL) : 
+                    USERS_CSV_URL;
+                
+                console.log(`🔄 Probando proxy ${proxyIndex}: ${CORS_PROXIES[proxyIndex] || 'directo'}`);
+                
+                fetch(url)
+                    .then(r => {
+                        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                        return r.text();
+                    })
+                    .then(txt => {
+                        console.log("📄 CSV recibido, primeras 200 chars:", txt.substring(0, 200));
+                        
+                        Papa.parse(txt, {
+                            header: true,
+                            skipEmptyLines: true,
+                            transformHeader: (header) => {
+                                // Limpiar encabezados (quitar espacios, normalizar)
+                                return header.trim().toUpperCase();
+                            },
+                            complete: (res) => {
+                                console.log("📊 Resultado del parseo:", res);
+                                
+                                if (res.errors && res.errors.length > 0) {
+                                    console.warn("⚠️ Errores en parseo:", res.errors);
+                                }
+                                
+                                if (res.data && res.data.length > 0) {
+                                    console.log("📋 Primera fila de datos:", res.data[0]);
+                                    console.log("📋 Columnas detectadas:", Object.keys(res.data[0]));
+                                    
+                                    let loadedCount = 0;
+                                    res.data.forEach((row, idx) => {
+                                        // Buscar columnas con variaciones de nombres
+                                        const usuario = row.USUARIO || row.Usuario || row.usuario || 
+                                                       row.USER || row.user || row.nombre || row.NOMBRE;
+                                        const pin = row.PIN || row.Pin || row.pin || 
+                                                   row.codigo || row.CODIGO || row.clave || row.CLAVE;
+                                        
+                                        if (usuario && pin && usuario.trim() !== '' && pin.trim() !== '') {
+                                            // No sobrescribir el admin
+                                            if (usuario !== ADMIN_USER.email) {
+                                                USERS_DATABASE[usuario.trim()] = pin.trim().toString();
+                                                loadedCount++;
+                                                console.log(`✅ Usuario ${loadedCount}: ${usuario.trim()} (PIN: ${pin.trim()})`);
+                                            }
+                                        } else {
+                                            console.warn(`⚠️ Fila ${idx} inválida:`, row);
+                                        }
+                                    });
+                                    
+                                    console.log(`✅ Total usuarios cargados: ${Object.keys(USERS_DATABASE).length} (Admin + ${loadedCount})`);
+                                    showNotification(`✅ ${loadedCount} usuarios cargados desde CSV`, "success");
+                                } else {
+                                    console.warn("⚠️ CSV sin datos");
+                                    showNotification("⚠️ CSV de usuarios vacío", "info");
+                                }
+                                
+                                populateLoginSelect();
+                            },
+                            error: (err) => {
+                                console.error("❌ Error parseando CSV de usuarios:", err);
+                                tryLoadWithProxy(proxyIndex + 1);
+                            }
+                        });
+                    })
+                    .catch(e => {
+                        console.error(`❌ Error con proxy ${proxyIndex}:`, e);
+                        tryLoadWithProxy(proxyIndex + 1);
+                    });
+            }
+            
+            // Empezar con el primer proxy
+            tryLoadWithProxy(0);
+        }
+        
+        function showAdminPanel() {
+            document.getElementById('admin-modal').style.display = 'flex';
+            
+            // Cargar configuraciones actuales
+            document.getElementById('admin-sheet-id').value = SHEET_ID_DATA;
+            document.getElementById('admin-users-csv').value = USERS_CSV_URL;
+            
+            // Mostrar lista de usuarios
+            displayUsersList();
+        }
+        
+        function closeAdminModal() {
+            document.getElementById('admin-modal').style.display = 'none';
+        }
+        
+        function saveDataSheetConfig() {
+            const newSheetId = document.getElementById('admin-sheet-id').value.trim();
+            if (!newSheetId) {
+                showNotification("❌ Ingrese un ID de Sheet válido", "error");
+                return;
+            }
+            
+            SHEET_ID_DATA = newSheetId;
+            CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID_DATA}/export?format=csv`;
+            
+            localStorage.setItem('config_sheet_id', SHEET_ID_DATA);
+            
+            showNotification("✅ URL de datos guardada. Reinicie para aplicar cambios.", "success");
+        }
+        
+        function saveUsersCSVConfig() {
+            const newUsersCSV = document.getElementById('admin-users-csv').value.trim();
+            if (!newUsersCSV) {
+                showNotification("❌ Ingrese una URL válida", "error");
+                return;
+            }
+            
+            USERS_CSV_URL = newUsersCSV;
+            localStorage.setItem('config_users_csv', USERS_CSV_URL);
+            
+            showNotification("✅ URL de usuarios guardada. Reinicie para aplicar cambios.", "success");
+        }
+        
+        function displayUsersList() {
+            const container = document.getElementById('admin-users-list');
+            const userCount = Object.keys(USERS_DATABASE).length;
+            
+            let html = `<div style="margin-bottom:8px; font-weight:600; color:#10b981;">Total: ${userCount} usuarios</div>`;
+            
+            Object.keys(USERS_DATABASE).sort().forEach(user => {
+                const isAdmin = user === ADMIN_USER.email;
+                const badge = isAdmin ? '<span style="background:#ef4444; color:white; padding:2px 8px; border-radius:4px; font-size:10px; margin-left:8px;">ADMIN</span>' : '';
+                html += `<div style="padding:8px; background:white; border-radius:6px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>${user}${badge}</span>
+                    <span style="font-family:monospace; color:#6b7280;">PIN: ${USERS_DATABASE[user]}</span>
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function refreshUsersList() {
+            showNotification("🔄 Recargando usuarios...", "info");
+            loadUsersFromCSV();
+            setTimeout(() => {
+                displayUsersList();
+                showNotification("✅ Usuarios recargados", "success");
+            }, 1000);
         }
 
         function populateLoginSelect() {
@@ -1041,8 +1256,16 @@
             
             if(USERS_DATABASE[user] == pin) {
                 currentUser = user;
+                currentUserIsAdmin = (user === ADMIN_USER.email);
+                
                 document.getElementById('login-modal').style.display = 'none';
                 document.getElementById('loader').style.display = 'flex';
+                
+                // Mostrar botón de admin si es administrador
+                if (currentUserIsAdmin) {
+                    document.getElementById('admin-btn').style.display = 'block';
+                }
+                
                 waitForLibraries(initMap);
             } else {
                 showNotification("PIN Incorrecto", "error");
@@ -2158,7 +2381,8 @@
                     Y: ${y.toLocaleString('es-CR')}<br>
                     Lat: ${lat.toFixed(6)}<br>
                     Lon: ${lon.toFixed(6)}
-                </div>`;
+                </div>
+                <button class="btn-accept" style="width:100%; border-radius:0 0 12px 12px; margin-top:8px; padding:10px;" onclick="startDirectNavigation(${lat},${lon},'Coordenada: X=${x.toLocaleString('es-CR')} Y=${y.toLocaleString('es-CR')}')">🧭 Navegar</button>`;
                 
                 newMarker.bindPopup(popupContent);
                 drawnItems.addLayer(newMarker);
