@@ -651,11 +651,20 @@
                 
                 <p><em>Penales:</em> Denuncia ante el Ministerio Público por delitos de violación de datos personales (Art. 196 bis Código Penal), revelación de secretos o acceso desautorizado a sistemas informáticos.</p>
                 
-                <p><strong>5. ACEPTACIÓN</strong><br>
-                El ingreso al Software constituye la aceptación plena y sin reservas de estos términos. El Funcionario declara ser consciente de las responsabilidades legales que conlleva el manejo de la información institucional aquí alojada.</p>
+                <p><strong>5. ESTADO DEL SOFTWARE Y LIMITACIONES TÉCNICAS</strong><br>
+                El Software se encuentra actualmente en <strong>fase de prueba y validación (BETA)</strong>. Como herramienta en desarrollo continuo, puede presentar errores, funcionalidades en proceso de mejora o comportamientos no esperados. El uso del sistema durante esta fase tiene como objetivos: (a) detectar y reportar errores técnicos, (b) determinar requerimientos de mejora funcional, (c) evaluar la experiencia de usuario en condiciones reales de campo, y (d) validar la precisión y confiabilidad de los datos geográficos.</p>
                 
-                <p><strong>6. CRÉDITOS Y PROPIEDAD INTELECTUAL</strong><br>
-                Esta herramienta digital ha sido desarrollada por Ing. Pablo César Sánchez Núñez, Encargado de Aprovechamiento Forestal de la Oficina Subregional de Orotina (ACOPAC-SINAC). De conformidad con los artículos 13 y 14 de la Ley de Derechos de Autor y Derechos Conexos (N° 6683), se reconoce al autor el derecho moral de paternidad sobre la obra, el cual es personalísimo, inalienable e irrenunciable, facultándole de forma perpetua a reivindicar su autoría y a exigir la mención de su nombre en toda reproducción o uso institucional. Si bien los derechos patrimoniales pertenecen al SINAC por la naturaleza de la relación laboral, el reconocimiento del autor intelectual es un derecho protegido constitucionalmente. Para soporte técnico o consultas, contactar a: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="34445556585b1a47555a575c514e74475d5a55571a535b1a5746">[email&#160;protected]</a></p>
+                <p><strong>Precisión GPS y Geolocalización:</strong><br>
+                El Software utiliza la tecnología GPS del dispositivo móvil del usuario para determinar ubicaciones geográficas. La precisión típica de GPS en smartphones comerciales oscila entre ±3 y ±10 metros en condiciones ideales de cielo despejado, pudiendo degradarse significativamente bajo cobertura forestal densa, en cañones urbanos, o en condiciones meteorológicas adversas. Los datos de ubicación mostrados en el visor son aproximaciones y <strong>no deben ser considerados como levantamientos topográficos oficiales</strong>. Para trabajos que requieran precisión centimétrica o métrica certificada (demarcaciones de linderos, informes periciales, resoluciones legales), es obligatorio realizar levantamientos con equipo geodésico profesional y metodología diferencial con estaciones de referencia CORS del Instituto Geográfico Nacional (IGN).</p>
+                
+                <p><strong>Sistema de Coordenadas Oficial:</strong><br>
+                El Software utiliza exclusivamente el sistema de coordenadas oficial de la República de Costa Rica: <strong>CR-SIRGAS / CRTM05 (EPSG:8908)</strong>, establecido mediante Decreto Ejecutivo N° 40962-MJP del 11 de abril de 2018 y ratificado por la Norma Técnica NTIG_CR01_06.2023 V2 del Instituto Geográfico Nacional. Este sistema reemplazó al anterior CR05 / CRTM05 (EPSG:5367) y se basa en el datum geodésico CR-SIRGAS (ligado a ITRF2008 época 2014.59) con elipsoide de referencia GRS 1980. Todas las coordenadas proyectadas CRTM05 desplegadas en el visor corresponden a este sistema oficial vigente. Las transformaciones a coordenadas geográficas (latitud/longitud) se realizan conforme a los parámetros oficiales de proyección Transversa de Mercator publicados por el IGN.</p>
+                
+                <p><strong>6. ACEPTACIÓN</strong><br>
+                El ingreso al Software constituye la aceptación plena y sin reservas de estos términos. El Funcionario declara ser consciente de las responsabilidades legales que conlleva el manejo de la información institucional aquí alojada, así como de las limitaciones técnicas inherentes a la tecnología GPS y al estado de desarrollo actual del sistema.</p>
+                
+                <p><strong>7. CRÉDITOS Y PROPIEDAD INTELECTUAL</strong><br>
+                Esta herramienta digital ha sido desarrollada por Ing. Pablo César Sánchez Núñez, Encargado de Aprovechamiento Forestal de la Oficina Subregional de Orotina (ACOPAC-SINAC). De conformidad con los artículos 13 y 14 de la Ley de Derechos de Autor y Derechos Conexos (N° 6683), se reconoce al autor el derecho moral de paternidad sobre la obra, el cual es personalísimo, inalienable e irrenunciable, facultándole de forma perpetua a reivindicar su autoría y a exigir la mención de su nombre en toda reproducción o uso institucional. Si bien los derechos patrimoniales pertenecen al SINAC por la naturaleza de la relación laboral, el reconocimiento del autor intelectual es un derecho protegido constitucionalmente. Para soporte técnico o consultas, contactar a: <strong style="color: #059669;">psanchez@sinac.go.cr</strong></p>
             </div>
             <div class="legal-footer">
                 <button class="btn-cancel" onclick="closeApp()">Cancelar</button>
@@ -726,6 +735,11 @@
                     </div>
                 </div>
                 
+                <!-- Estado de carga de usuarios -->
+                <div id="login-status" style="display: none; padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; margin-bottom: 16px; text-align: center; font-size: 13px; color: #1e40af;">
+                    🔄 Cargando usuarios...
+                </div>
+                
                 <!-- Botón de ingreso -->
                 <button onclick="processLogin()" 
                         style="width: 100%; padding: 16px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); margin-bottom: 16px;"
@@ -788,10 +802,6 @@
             <!-- SECCIÓN CAPAS -->
             <div class="menu-section">
                 <span class="section-title">Capas</span>
-                <label class="layer-item">
-                    <input type="checkbox" id="layer-catastro" onchange="toggleOverlay('catastro', this.checked)">
-                    SNIT Catastro
-                </label>
                 <label class="layer-item">
                     <input type="checkbox" id="show-labels" checked>
                     Etiquetas Árboles
@@ -965,10 +975,15 @@
             
             <!-- Configuración de URL de usuarios -->
             <div style="margin-bottom:24px; padding:20px; background:#f9fafb; border-radius:12px;">
-                <h3 style="font-size:16px; font-weight:600; color:#374151; margin-bottom:12px;">👥 URL de Usuarios</h3>
-                <p style="font-size:12px; color:#6b7280; margin-bottom:12px;">URL del CSV publicado de usuarios (Columna A: USUARIO, Columna B: PIN):</p>
-                <input type="text" id="admin-users-csv" placeholder="https://docs.google.com/..." style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:11px; font-family:monospace; margin-bottom:12px;">
-                <button onclick="saveUsersCSVConfig()" class="btn-accept" style="width:100%;">💾 Guardar URL de Usuarios</button>
+                <h3 style="font-size:16px; font-weight:600; color:#374151; margin-bottom:12px;">👥 Configuración de Usuarios</h3>
+                <p style="font-size:12px; color:#6b7280; margin-bottom:8px;">Puede ingresar cualquiera de estos formatos:</p>
+                <ul style="font-size:11px; color:#6b7280; margin-bottom:12px; padding-left:20px; line-height:1.6;">
+                    <li><strong>Sheet ID + GID:</strong> 1ABC123xyz:68050674</li>
+                    <li><strong>Solo Sheet ID:</strong> 1ABC123xyz</li>
+                    <li><strong>URL completa:</strong> https://docs.google.com/.../d/[ID]/edit#gid=...</li>
+                </ul>
+                <input type="text" id="admin-users-csv" placeholder="Sheet ID o URL completa" style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:11px; font-family:monospace; margin-bottom:12px;">
+                <button onclick="saveUsersCSVConfig()" class="btn-accept" style="width:100%;">💾 Guardar Configuración de Usuarios</button>
             </div>
             
             <!-- Lista de usuarios actuales -->
@@ -978,6 +993,21 @@
                     Cargando...
                 </div>
                 <button onclick="refreshUsersList()" class="btn-accept" style="width:100%; margin-top:12px;">🔄 Recargar Usuarios</button>
+            </div>
+            
+            <!-- Configuración de webhook de logs -->
+            <div style="margin-bottom:24px; padding:20px; background:#f9fafb; border-radius:12px;">
+                <h3 style="font-size:16px; font-weight:600; color:#374151; margin-bottom:12px;">📊 Sistema de Logs (Auditoría)</h3>
+                <p style="font-size:12px; color:#6b7280; margin-bottom:12px;">URL del webhook de Google Apps Script para registrar actividad:</p>
+                <input type="text" id="admin-logs-webhook" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:10px; font-family:monospace; margin-bottom:12px;">
+                <button onclick="saveLogsWebhookConfig()" class="btn-accept" style="width:100%;">💾 Guardar Webhook de Logs</button>
+                <div style="margin-top:12px; padding:12px; background:#fef3c7; border-radius:8px; font-size:11px; color:#92400e;">
+                    <strong>ℹ️ Instrucciones:</strong><br>
+                    1. Configura Google Apps Script (ver documentación)<br>
+                    2. Obtén la URL del webhook<br>
+                    3. Pégala aquí<br>
+                    4. Los logs se registrarán automáticamente en la pestaña LOGS
+                </div>
             </div>
             
             <!-- Botones de acción -->
@@ -995,7 +1025,7 @@
     <!-- MAPA -->
     <div id="map"></div>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         window.addEventListener('unhandledrejection', function(event) {
             console.warn("Error asíncrono:", event.reason);
             const debugLog = document.getElementById('debug-log');
@@ -1012,10 +1042,15 @@
         
         // USUARIOS - SOLO ADMINISTRADOR EN CÓDIGO
         const ADMIN_USER = {
-            email: "pablo.sanchez@sinac.go.cr",
+            name: "Pablo Sánchez",
             pin: "920",
             isAdmin: true
         };
+        
+        // Función para verificar si un usuario es admin
+        function isAdmin(username) {
+            return username === "Pablo Sánchez";
+        }
         
         // Base de datos de usuarios (se carga dinámicamente)
         let USERS_DATABASE = {};
@@ -1036,12 +1071,85 @@
         // CONFIGURACIÓN
         const CRTM05_DEF = '+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +units=m +no_defs';
         
+        // Limpiar configuración antigua si tiene URL /pub o Sheet ID obsoleto (migración automática)
+        const oldConfig = localStorage.getItem('config_users_csv');
+        if (oldConfig && (oldConfig.includes('/pub?') || oldConfig === '19Cz9ZKtUIyt8e15hN0FiTED6f3Vv3qP-osy-vyhY3y4')) {
+            console.log("🔄 Detectada configuración antigua, limpiando...");
+            localStorage.removeItem('config_users_csv');
+            console.log("✅ Configuración limpiada, usando Sheet con pestaña USUARIOS (gid=68050674)");
+        }
+        
         // URLs configurables (guardadas en LocalStorage)
         let SHEET_ID_DATA = localStorage.getItem('config_sheet_id') || '1H416o9kATBiHPiVXqtCravU4_BnpnrYROCTi7G4BS1A';
-        let CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID_DATA}/export?format=csv`;
-        let USERS_CSV_URL = localStorage.getItem('config_users_csv') || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQLB8fXSASDCtTb710K_Gjb3a6DnJUZGaSRkXAR5lHhBfF88LcJUQyC1-eqIAFi-XKdpcVHksD-ckAv/pub?gid=0&single=true&output=csv';
+        let GID_DATA = localStorage.getItem('config_gid_data') || '0'; // Pestaña ARBOLES
+        let CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID_DATA}/export?format=csv&gid=${GID_DATA}`;
         
-        const SNIT_CATASTRO_URL = 'https://siri.snitcr.go.cr/Geoservicios/wms';
+        // Función para normalizar URL de usuarios (convertir cualquier formato al que funciona)
+        function normalizeUsersURL(input) {
+            // Si es solo un Sheet ID (sin https)
+            if (!input.includes('http')) {
+                // Si contiene :, es Sheet ID + GID
+                if (input.includes(':')) {
+                    const [sheetId, gid] = input.split(':');
+                    return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+                }
+                // Solo Sheet ID (sin GID)
+                return `https://docs.google.com/spreadsheets/d/${input}/export?format=csv`;
+            }
+            
+            // Si es URL con /pub, extraer Sheet ID y convertir a /export
+            if (input.includes('/pub?')) {
+                const match = input.match(/\/d\/e\/([^\/]+)\//);
+                if (match) {
+                    console.log("⚠️ Formato /pub detectado, convirtiendo a /export...");
+                    return input;
+                }
+            }
+            
+            // Si es URL con /d/[ID]/edit o /d/[ID]/export
+            const match = input.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (match) {
+                const sheetId = match[1];
+                console.log("✅ Sheet ID extraído:", sheetId);
+                
+                // Buscar GID en la URL
+                const gidMatch = input.match(/[#&]gid=(\d+)/);
+                if (gidMatch) {
+                    const gid = gidMatch[1];
+                    console.log("✅ GID extraído:", gid);
+                    return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+                }
+                
+                return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+            }
+            
+            // Si ya es formato correcto o no pudimos procesarlo, devolver tal cual
+            return input;
+        }
+        
+        // Configuración por defecto: mismo Sheet que árboles, pestaña USUARIOS (gid=68050674)
+        let USERS_CSV_URL = normalizeUsersURL(localStorage.getItem('config_users_csv') || '1H416o9kATBiHPiVXqtCravU4_BnpnrYROCTi7G4BS1A:68050674');
+        
+        // ====================================================================
+        // SISTEMA DE LOGS Y AUDITORÍA
+        // ====================================================================
+        
+        // URL del webhook de Google Apps Script (se configurará después)
+        let LOGS_WEBHOOK_URL = localStorage.getItem('config_logs_webhook') || 'https://script.google.com/macros/s/AKfycbyuF0CWoZ2AaY0ERtunslFB6qHNeI2vARMnHuYlhJbNr1q21KAnkzuPm8bm5xtjJHek/exec';
+        
+        // Configuración de logs
+        const LOGS_CONFIG = {
+            enabled: true, // Activar/desactivar sistema de logs
+            offlineQueue: [], // Cola de logs pendientes cuando no hay conexión
+            maxQueueSize: 100, // Máximo de logs en cola
+            retryAttempts: 3, // Intentos de reenvío si falla
+        };
+        
+        // Variables de sesión
+        let sessionId = null;
+        let deviceId = null;
+        let sessionStartTime = null;
+        let currentUser = null;
         
         const CORS_PROXIES = [
             '', 'https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?',
@@ -1063,8 +1171,21 @@
         }
         
         function acceptLegal() {
-            document.getElementById('legal-modal').style.display = 'none';
-            document.getElementById('login-modal').style.display = 'flex';
+      // Agregar admin inmediatamente
+            USERS_DATABASE = {};
+            USERS_DATABASE[ADMIN_USER.name] = ADMIN_USER.pin;
+            
+            // Mostrar login inmediatamente con admin
+            populateLoginSelect();
+            
+            // Mostrar mensaje de carga
+            const statusDiv = document.getElementById('login-status');
+            if (statusDiv) {
+                statusDiv.innerHTML = '🔄 Cargando usuarios adicionales...';
+                statusDiv.style.display = 'block';
+            }
+            
+            // Intentar cargar usuarios del CSV en segundo plano (sin bloquear)
             loadUsersFromCSV();
         }
         
@@ -1073,18 +1194,46 @@
         // ====================================================================
         
         function loadUsersFromCSV() {
-            // Primero agregar el admin
-            USERS_DATABASE = {};
-            USERS_DATABASE[ADMIN_USER.email] = ADMIN_USER.pin;
+            console.log("📥 Cargando usuarios adicionales desde CSV...");
+            console.log("📥 URL:", USERS_CSV_URL);
             
-            console.log("📥 Intentando cargar usuarios desde:", USERS_CSV_URL);
+            const statusDiv = document.getElementById('login-status');
             
-            // Función para probar con diferentes proxies
+            // Timeout de seguridad: si no carga en 15 segundos, continuar solo con admin
+            const timeoutId = setTimeout(() => {
+                console.warn("⏱️ Timeout: Carga de usuarios tomó demasiado tiempo");
+                if (statusDiv) {
+                    statusDiv.innerHTML = '⚠️ Timeout - Solo administrador disponible';
+                    statusDiv.style.background = '#fef3c7';
+                    statusDiv.style.borderColor = '#fcd34d';
+                    statusDiv.style.color = '#92400e';
+                }
+            }, 15000);
+            
+            // Verificar que Papa.parse esté disponible
+            if (typeof Papa === 'undefined') {
+                console.error("❌ Papa.parse no está disponible");
+                clearTimeout(timeoutId);
+                if (statusDiv) {
+                    statusDiv.innerHTML = '⚠️ Librería CSV no disponible - Solo admin';
+                    statusDiv.style.background = '#fef3c7';
+                    statusDiv.style.borderColor = '#fcd34d';
+                    statusDiv.style.color = '#92400e';
+                }
+                return;
+            }
+            
+            // Función para probar con diferentes proxies CORS
             function tryLoadWithProxy(proxyIndex) {
                 if (proxyIndex >= CORS_PROXIES.length) {
                     console.error("❌ Todos los proxies fallaron al cargar usuarios");
-                    showNotification("⚠️ No se pudieron cargar usuarios. Solo admin disponible.", "info");
-                    populateLoginSelect();
+                    clearTimeout(timeoutId);
+                    if (statusDiv) {
+                        statusDiv.innerHTML = '❌ No se pudo conectar al servidor de usuarios<br><small>Solo admin disponible</small>';
+                        statusDiv.style.background = '#fee2e2';
+                        statusDiv.style.borderColor = '#fca5a5';
+                        statusDiv.style.color = '#991b1b';
+                    }
                     return;
                 }
                 
@@ -1094,74 +1243,114 @@
                 
                 console.log(`🔄 Probando proxy ${proxyIndex}: ${CORS_PROXIES[proxyIndex] || 'directo'}`);
                 
+                if (statusDiv) {
+                    statusDiv.innerHTML = `🔄 Descargando usuarios (método ${proxyIndex + 1}/${CORS_PROXIES.length})...`;
+                }
+                
                 fetch(url)
                     .then(r => {
+                        console.log(`📡 Proxy ${proxyIndex} - Respuesta:`, r.status, r.statusText);
                         if (!r.ok) throw new Error(`HTTP ${r.status}`);
                         return r.text();
                     })
                     .then(txt => {
-                        console.log("📄 CSV recibido, primeras 200 chars:", txt.substring(0, 200));
+                        clearTimeout(timeoutId);
+                        console.log(`✅ Proxy ${proxyIndex} FUNCIONÓ!`);
+                        console.log("📄 CSV recibido, primeras 300 chars:", txt.substring(0, 300));
                         
-                        Papa.parse(txt, {
-                            header: true,
-                            skipEmptyLines: true,
-                            transformHeader: (header) => {
-                                // Limpiar encabezados (quitar espacios, normalizar)
-                                return header.trim().toUpperCase();
-                            },
-                            complete: (res) => {
-                                console.log("📊 Resultado del parseo:", res);
-                                
-                                if (res.errors && res.errors.length > 0) {
-                                    console.warn("⚠️ Errores en parseo:", res.errors);
-                                }
-                                
-                                if (res.data && res.data.length > 0) {
-                                    console.log("📋 Primera fila de datos:", res.data[0]);
-                                    console.log("📋 Columnas detectadas:", Object.keys(res.data[0]));
+                        if (statusDiv) {
+                            statusDiv.innerHTML = '⚙️ Procesando usuarios...';
+                        }
+                        
+                        try {
+                            Papa.parse(txt, {
+                                header: true,
+                                skipEmptyLines: true,
+                                transformHeader: (header) => {
+                                    return header.trim().toUpperCase();
+                                },
+                                complete: (res) => {
+                                    console.log("📊 Parseo completado");
+                                    console.log("📋 Errores:", res.errors.length);
+                                    console.log("📋 Filas:", res.data.length);
                                     
-                                    let loadedCount = 0;
-                                    res.data.forEach((row, idx) => {
-                                        // Buscar columnas con variaciones de nombres
-                                        const usuario = row.USUARIO || row.Usuario || row.usuario || 
-                                                       row.USER || row.user || row.nombre || row.NOMBRE;
-                                        const pin = row.PIN || row.Pin || row.pin || 
-                                                   row.codigo || row.CODIGO || row.clave || row.CLAVE;
+                                    if (res.errors && res.errors.length > 0) {
+                                        console.warn("⚠️ Errores en parseo:", res.errors);
+                                    }
+                                    
+                                    if (res.data && res.data.length > 0) {
+                                        console.log("📋 Primera fila:", res.data[0]);
+                                        console.log("📋 Columnas:", Object.keys(res.data[0]));
                                         
-                                        if (usuario && pin && usuario.trim() !== '' && pin.trim() !== '') {
-                                            // No sobrescribir el admin
-                                            if (usuario !== ADMIN_USER.email) {
-                                                USERS_DATABASE[usuario.trim()] = pin.trim().toString();
-                                                loadedCount++;
-                                                console.log(`✅ Usuario ${loadedCount}: ${usuario.trim()} (PIN: ${pin.trim()})`);
+                                        let loadedCount = 0;
+                                        res.data.forEach((row, idx) => {
+                                            const usuario = row.USUARIO || row.Usuario || row.usuario || 
+                                                           row.USER || row.user || row.nombre || row.NOMBRE;
+                                            const pin = row.PIN || row.Pin || row.pin || 
+                                                       row.codigo || row.CODIGO || row.clave || row.CLAVE;
+                                            
+                                            if (usuario && pin && usuario.trim() !== '' && pin.trim() !== '') {
+                                                if (!isAdmin(usuario.trim())) {
+                                                    USERS_DATABASE[usuario.trim()] = pin.trim().toString();
+                                                    loadedCount++;
+                                                    console.log(`✅ Usuario ${loadedCount}: ${usuario.trim()} (PIN: ${pin.trim()})`);
+                                                } else {
+                                                    console.log(`ℹ️ Ignorando admin del CSV: ${usuario.trim()}`);
+                                                }
+                                            } else {
+                                                if (idx < 5) {
+                                                    console.warn(`⚠️ Fila ${idx} inválida:`, row);
+                                                }
                                             }
+                                        });
+                                        
+                                        console.log(`✅ Total usuarios: ${Object.keys(USERS_DATABASE).length} (Admin + ${loadedCount} del CSV)`);
+                                        
+                                        if (loadedCount > 0) {
+                                            if (statusDiv) {
+                                                statusDiv.innerHTML = `✅ ${loadedCount} usuario${loadedCount > 1 ? 's' : ''} cargado${loadedCount > 1 ? 's' : ''} desde CSV`;
+                                                statusDiv.style.background = '#d1fae5';
+                                                statusDiv.style.borderColor = '#6ee7b7';
+                                                statusDiv.style.color = '#065f46';
+                                            }
+                                            populateLoginSelect(); // Actualizar dropdown
                                         } else {
-                                            console.warn(`⚠️ Fila ${idx} inválida:`, row);
+                                            if (statusDiv) {
+                                                statusDiv.innerHTML = '⚠️ CSV sin usuarios válidos';
+                                                statusDiv.style.background = '#fef3c7';
+                                                statusDiv.style.borderColor = '#fcd34d';
+                                                statusDiv.style.color = '#92400e';
+                                            }
                                         }
-                                    });
-                                    
-                                    console.log(`✅ Total usuarios cargados: ${Object.keys(USERS_DATABASE).length} (Admin + ${loadedCount})`);
-                                    showNotification(`✅ ${loadedCount} usuarios cargados desde CSV`, "success");
-                                } else {
-                                    console.warn("⚠️ CSV sin datos");
-                                    showNotification("⚠️ CSV de usuarios vacío", "info");
+                                    } else {
+                                        console.warn("⚠️ CSV sin datos");
+                                        if (statusDiv) {
+                                            statusDiv.innerHTML = '⚠️ CSV vacío, solo admin disponible';
+                                            statusDiv.style.background = '#fef3c7';
+                                            statusDiv.style.borderColor = '#fcd34d';
+                                            statusDiv.style.color = '#92400e';
+                                        }
+                                    }
+                                },
+                                error: (err) => {
+                                    console.error("❌ Error parseando CSV:", err);
+                                    clearTimeout(timeoutId);
+                                    tryLoadWithProxy(proxyIndex + 1);
                                 }
-                                
-                                populateLoginSelect();
-                            },
-                            error: (err) => {
-                                console.error("❌ Error parseando CSV de usuarios:", err);
-                                tryLoadWithProxy(proxyIndex + 1);
-                            }
-                        });
+                            });
+                        } catch (parseError) {
+                            console.error("❌ Excepción al parsear:", parseError);
+                            clearTimeout(timeoutId);
+                            tryLoadWithProxy(proxyIndex + 1);
+                        }
                     })
                     .catch(e => {
-                        console.error(`❌ Error con proxy ${proxyIndex}:`, e);
+                        console.error(`❌ Proxy ${proxyIndex} falló:`, e.message);
                         tryLoadWithProxy(proxyIndex + 1);
                     });
             }
             
-            // Empezar con el primer proxy
+            // Empezar con el primer proxy (directo sin proxy)
             tryLoadWithProxy(0);
         }
         
@@ -1171,6 +1360,7 @@
             // Cargar configuraciones actuales
             document.getElementById('admin-sheet-id').value = SHEET_ID_DATA;
             document.getElementById('admin-users-csv').value = USERS_CSV_URL;
+            document.getElementById('admin-logs-webhook').value = LOGS_WEBHOOK_URL;
             
             // Mostrar lista de usuarios
             displayUsersList();
@@ -1196,16 +1386,43 @@
         }
         
         function saveUsersCSVConfig() {
-            const newUsersCSV = document.getElementById('admin-users-csv').value.trim();
-            if (!newUsersCSV) {
-                showNotification("❌ Ingrese una URL válida", "error");
+            const input = document.getElementById('admin-users-csv').value.trim();
+            if (!input) {
+                showNotification("❌ Ingrese un Sheet ID o URL válida", "error");
                 return;
             }
             
-            USERS_CSV_URL = newUsersCSV;
-            localStorage.setItem('config_users_csv', USERS_CSV_URL);
+            // Normalizar la URL (convertir cualquier formato al que funciona)
+            USERS_CSV_URL = normalizeUsersURL(input);
+            
+            // Guardar el input original del usuario
+            localStorage.setItem('config_users_csv', input);
+            
+            console.log("📥 URL original:", input);
+            console.log("📥 URL normalizada:", USERS_CSV_URL);
             
             showNotification("✅ URL de usuarios guardada. Reinicie para aplicar cambios.", "success");
+        }
+        
+        function saveLogsWebhookConfig() {
+            const webhook = document.getElementById('admin-logs-webhook').value.trim();
+            
+            // Validar formato básico de URL
+            if (webhook && !webhook.startsWith('https://')) {
+                showNotification("❌ La URL debe comenzar con https://", "error");
+                return;
+            }
+            
+            LOGS_WEBHOOK_URL = webhook;
+            localStorage.setItem('config_logs_webhook', webhook);
+            
+            console.log("📊 Webhook de logs guardado:", webhook || '(vacío - logs desactivados)');
+            
+            if (webhook) {
+                showNotification("✅ Webhook guardado. Sistema de logs activado.", "success");
+            } else {
+                showNotification("⚠️ Webhook vacío. Sistema de logs desactivado.", "info");
+            }
         }
         
         function displayUsersList() {
@@ -1215,8 +1432,8 @@
             let html = `<div style="margin-bottom:8px; font-weight:600; color:#10b981;">Total: ${userCount} usuarios</div>`;
             
             Object.keys(USERS_DATABASE).sort().forEach(user => {
-                const isAdmin = user === ADMIN_USER.email;
-                const badge = isAdmin ? '<span style="background:#ef4444; color:white; padding:2px 8px; border-radius:4px; font-size:10px; margin-left:8px;">ADMIN</span>' : '';
+                const userIsAdmin = isAdmin(user);
+                const badge = userIsAdmin ? '<span style="background:#ef4444; color:white; padding:2px 8px; border-radius:4px; font-size:10px; margin-left:8px;">ADMIN</span>' : '';
                 html += `<div style="padding:8px; background:white; border-radius:6px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
                     <span>${user}${badge}</span>
                     <span style="font-family:monospace; color:#6b7280;">PIN: ${USERS_DATABASE[user]}</span>
@@ -1234,15 +1451,216 @@
                 showNotification("✅ Usuarios recargados", "success");
             }, 1000);
         }
+        
+        // ====================================================================
+        // SISTEMA DE LOGS Y AUDITORÍA
+        // ====================================================================
+        
+        // Generar o recuperar ID único del dispositivo
+        function getDeviceId() {
+            if (deviceId) return deviceId;
+            
+            let stored = localStorage.getItem('device_id');
+            if (!stored) {
+                stored = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+                localStorage.setItem('device_id', stored);
+            }
+            deviceId = stored;
+            return deviceId;
+        }
+        
+        // Generar ID de sesión
+        function generateSessionId() {
+            return 'sess_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        }
+        
+        // Detectar tipo de dispositivo
+        function getDeviceType() {
+            const ua = navigator.userAgent;
+            if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+                return 'Tablet';
+            }
+            if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+                return 'Mobile';
+            }
+            return 'Desktop';
+        }
+        
+        // Detectar navegador
+        function getBrowser() {
+            const ua = navigator.userAgent;
+            if (ua.indexOf('Firefox') > -1) return 'Firefox';
+            if (ua.indexOf('SamsungBrowser') > -1) return 'Samsung';
+            if (ua.indexOf('Opera') > -1 || ua.indexOf('OPR') > -1) return 'Opera';
+            if (ua.indexOf('Trident') > -1) return 'IE';
+            if (ua.indexOf('Edge') > -1) return 'Edge';
+            if (ua.indexOf('Chrome') > -1) return 'Chrome';
+            if (ua.indexOf('Safari') > -1) return 'Safari';
+            return 'Unknown';
+        }
+        
+        // Enviar log al webhook
+        async function sendLog(accion, datosExtra = '') {
+            if (!LOGS_CONFIG.enabled) return;
+            if (!LOGS_WEBHOOK_URL || LOGS_WEBHOOK_URL === '') {
+                console.log('📊 Log (webhook no configurado):', accion, datosExtra);
+                return;
+            }
+            
+            const logData = {
+                sessionId: sessionId || '',
+                usuario: currentUser || '',
+                accion: accion,
+                fechaHora: new Date().toLocaleString('es-CR', { 
+                    timeZone: 'America/Costa_Rica',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }),
+                dispositivoId: getDeviceId(),
+                tipoDispositivo: getDeviceType(),
+                navegador: getBrowser(),
+                datosExtra: datosExtra
+            };
+            
+            console.log('📊 Enviando log:', logData);
+            
+            try {
+                const response = await fetch(LOGS_WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(logData)
+                });
+                
+                console.log('✅ Log enviado correctamente');
+                
+                // Intentar enviar logs pendientes si hay
+                if (LOGS_CONFIG.offlineQueue.length > 0) {
+                    await sendPendingLogs();
+                }
+                
+            } catch (error) {
+                console.warn('⚠️ Error enviando log:', error);
+                
+                // Guardar en cola offline si hay error
+                if (LOGS_CONFIG.offlineQueue.length < LOGS_CONFIG.maxQueueSize) {
+                    LOGS_CONFIG.offlineQueue.push(logData);
+                    localStorage.setItem('logs_queue', JSON.stringify(LOGS_CONFIG.offlineQueue));
+                }
+            }
+        }
+        
+        // Enviar logs pendientes
+        async function sendPendingLogs() {
+            if (LOGS_CONFIG.offlineQueue.length === 0) return;
+            
+            console.log(`📤 Enviando ${LOGS_CONFIG.offlineQueue.length} logs pendientes...`);
+            
+            const logsToSend = [...LOGS_CONFIG.offlineQueue];
+            LOGS_CONFIG.offlineQueue = [];
+            
+            for (const logData of logsToSend) {
+                try {
+                    await fetch(LOGS_WEBHOOK_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(logData)
+                    });
+                } catch (error) {
+                    // Si falla, volver a agregar a la cola
+                    LOGS_CONFIG.offlineQueue.push(logData);
+                }
+            }
+            
+            localStorage.setItem('logs_queue', JSON.stringify(LOGS_CONFIG.offlineQueue));
+            console.log(`✅ Logs pendientes procesados. Quedan ${LOGS_CONFIG.offlineQueue.length} en cola`);
+        }
+        
+        // Inicializar sistema de logs
+        function initLogsSystem() {
+            // Cargar cola de logs pendientes
+            const storedQueue = localStorage.getItem('logs_queue');
+            if (storedQueue) {
+                try {
+                    LOGS_CONFIG.offlineQueue = JSON.parse(storedQueue);
+                } catch (e) {
+                    console.warn('Error cargando cola de logs:', e);
+                }
+            }
+            
+            console.log('📊 Sistema de logs inicializado');
+            console.log('📊 Webhook:', LOGS_WEBHOOK_URL || 'No configurado');
+            console.log('📊 Device ID:', getDeviceId());
+            console.log('📊 Tipo:', getDeviceType());
+            console.log('📊 Navegador:', getBrowser());
+        }
+        
+        // Registrar LOGOUT cuando se cierra la página
+        window.addEventListener('beforeunload', function() {
+            if (currentUser && sessionId) {
+                const sessionDuration = sessionStartTime ? Math.floor((Date.now() - sessionStartTime) / 1000) : 0;
+                const logData = {
+                    sessionId: sessionId,
+                    usuario: currentUser,
+                    accion: 'LOGOUT',
+                    fechaHora: new Date().toLocaleString('es-CR', { 
+                        timeZone: 'America/Costa_Rica',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    }),
+                    dispositivoId: getDeviceId(),
+                    tipoDispositivo: getDeviceType(),
+                    navegador: getBrowser(),
+                    datosExtra: `Duración sesión: ${sessionDuration}s`
+                };
+                
+                // Usar sendBeacon para envío confiable al cerrar
+                if (navigator.sendBeacon && LOGS_WEBHOOK_URL) {
+                    navigator.sendBeacon(LOGS_WEBHOOK_URL, JSON.stringify(logData));
+                }
+                
+                console.log('📊 LOGOUT registrado');
+            }
+        });
 
         function populateLoginSelect() {
             const select = document.getElementById('login-user');
             select.innerHTML = '<option value="">Seleccione usuario...</option>';
-            Object.keys(USERS_DATABASE).sort().forEach(u => {
+            
+            // Crear lista única de usuarios (evitar duplicados del admin)
+            const uniqueUsers = {};
+            Object.keys(USERS_DATABASE).forEach(u => {
+                // Si es admin, usar solo el nombre (no el email)
+                if (isAdmin(u)) {
+                    uniqueUsers[ADMIN_USER.name] = USERS_DATABASE[u];
+                } else {
+                    uniqueUsers[u] = USERS_DATABASE[u];
+                }
+            });
+            
+            Object.keys(uniqueUsers).sort().forEach(u => {
                 const opt = document.createElement('option');
-                opt.value = u; opt.textContent = u;
+                opt.value = u; 
+                opt.textContent = u;
                 select.appendChild(opt);
             });
+            
+            console.log("📋 Usuarios en dropdown:", Object.keys(uniqueUsers).length);
         }
 
         function processLogin() {
@@ -1256,13 +1674,25 @@
             
             if(USERS_DATABASE[user] == pin) {
                 currentUser = user;
-                currentUserIsAdmin = (user === ADMIN_USER.email);
+                currentUserIsAdmin = isAdmin(user);
+                
+                // Iniciar sesión y registrar login
+                sessionId = generateSessionId();
+                sessionStartTime = Date.now();
+                
+                console.log("✅ Login exitoso:", user);
+                console.log("👤 Es administrador:", currentUserIsAdmin);
+                console.log("🔑 Session ID:", sessionId);
+                
+                // Registrar evento de LOGIN
+                sendLog('LOGIN', `Usuario: ${user}, Admin: ${currentUserIsAdmin}`);
                 
                 document.getElementById('login-modal').style.display = 'none';
                 document.getElementById('loader').style.display = 'flex';
                 
                 // Mostrar botón de admin si es administrador
                 if (currentUserIsAdmin) {
+                    console.log("⚙️ Mostrando botón de administración");
                     document.getElementById('admin-btn').style.display = 'block';
                 }
                 
@@ -1340,20 +1770,6 @@
                 attribution: '© OSM', maxZoom: 22, maxNativeZoom: 19 
             });
             
-            // Capa SNIT Catastro
-            layers.catastro = L.tileLayer.wms(SNIT_CATASTRO_URL, { 
-                layers: 'CATASTRO_2014', 
-                format: 'image/png', 
-                transparent: true, 
-                version: '1.3.0',
-                attribution: 'SNIT-SIRI', 
-                opacity: 1.0, 
-                maxZoom: 22, 
-                tiled: true, 
-                minZoom: 0, 
-                zIndex: 1000 
-            });
-
             layers.google.addTo(map); // Default
 
             // Grupo para dibujos y mediciones
@@ -1471,6 +1887,10 @@
                                 
                                 // Centrar mapa
                                 map.setView([lat, lon], 18);
+                                
+                                // Registrar activación de GPS
+                                console.log('📊 GPS activado');
+                                sendLog('GPS_ACTIVADO', `Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}, Precisión: ${accuracy.toFixed(2)}m`);
                                 
                                 // Restaurar ícono
                                 btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>`;
@@ -1893,6 +2313,14 @@
                         offset: [0, -10] 
                     });
                     
+                    // Registrar consulta cuando se abre el popup
+                    m.on('popupopen', function() {
+                        const treeId = row[idCol] || (i+1);
+                        const treeInfo = `Expediente: ${expVal}, ID: ${treeId}, Especie: ${row[espCol] || 'N/A'}`;
+                        console.log('📊 Consultando árbol:', treeInfo);
+                        sendLog('CONSULTA_ARBOL', treeInfo);
+                    });
+                    
                     allMarkers.push(m);
                     bounds.extend([lat, lon]);
                 } catch(e) {
@@ -2014,6 +2442,12 @@
         }
         
         function filterMarkers(val, shouldZoom = true) {
+            // Registrar aplicación de filtro
+            if (val && val !== 'all') {
+                console.log('📊 Filtro aplicado:', val);
+                sendLog('FILTRO_APLICADO', `Expediente: ${val}`);
+            }
+            
             let cnt = 0;
             const b = L.latLngBounds();
             allMarkers.forEach(m => {
@@ -2178,6 +2612,10 @@
         }
         
         function startDirectNavigation(lat, lng, label) {
+            // Registrar inicio de navegación
+            console.log('📊 Navegación iniciada:', label);
+            sendLog('NAVEGACION_INICIADA', `Destino: ${label}, Lat: ${lat}, Lon: ${lng}`);
+            
             targetLatLng = L.latLng(lat, lng);
             document.getElementById('nav-target-info').textContent = label;
             map.closePopup();
