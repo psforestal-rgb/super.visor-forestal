@@ -664,7 +664,7 @@
                 El ingreso al Software constituye la aceptación plena y sin reservas de estos términos. El Funcionario declara ser consciente de las responsabilidades legales que conlleva el manejo de la información institucional aquí alojada, así como de las limitaciones técnicas inherentes a la tecnología GPS y al estado de desarrollo actual del sistema.</p>
                 
                 <p><strong>7. CRÉDITOS Y PROPIEDAD INTELECTUAL</strong><br>
-                Esta herramienta digital ha sido desarrollada por Ing. Pablo César Sánchez Núñez, Encargado de Aprovechamiento Forestal de la Oficina Subregional de Orotina (ACOPAC-SINAC). De conformidad con los artículos 13 y 14 de la Ley de Derechos de Autor y Derechos Conexos (N° 6683), se reconoce al autor el derecho moral de paternidad sobre la obra, el cual es personalísimo, inalienable e irrenunciable, facultándole de forma perpetua a reivindicar su autoría y a exigir la mención de su nombre en toda reproducción o uso institucional. Si bien los derechos patrimoniales pertenecen al SINAC por la naturaleza de la relación laboral, el reconocimiento del autor intelectual es un derecho protegido constitucionalmente. Para soporte técnico o consultas, contactar a: <strong style="color: #059669;">psanchez@sinac.go.cr</strong></p>
+                Esta herramienta digital ha sido desarrollada por Ing. Pablo César Sánchez Núñez, Encargado de Aprovechamiento Forestal de la Oficina Subregional de Orotina (ACOPAC-SINAC). De conformidad con los artículos 13 y 14 de la Ley de Derechos de Autor y Derechos Conexos (N° 6683), se reconoce al autor el derecho moral de paternidad sobre la obra, el cual es personalísimo, inalienable e irrenunciable, facultándole de forma perpetua a reivindicar su autoría y a exigir la mención de su nombre en toda reproducción o uso institucional. Si bien los derechos patrimoniales pertenecen al SINAC por la naturaleza de la relación laboral, el reconocimiento del autor intelectual es un derecho protegido constitucionalmente. Para soporte técnico o consultas, contactar a: <strong style="color: #059669;"><a href="mailto:pablo.sanchez@sinac.go.cr">pablo.sanchez@sinac.go.cr</a></strong></p>
             </div>
             <div class="legal-footer">
                 <button class="btn-cancel" onclick="closeApp()">Cancelar</button>
@@ -852,32 +852,85 @@
         </div>
     </div>
 
-    <!-- DASHBOARD NAVEGACIÓN (de SUPER7) -->
+    <!-- DASHBOARD NAVEGACIÓN MEJORADO -->
     <div id="nav-dashboard">
+        <!-- Info del destino -->
         <div id="nav-target-info">Destino</div>
-        <div id="nav-arrow-container"><div id="nav-arrow">⬆</div></div>
+        
+        <!-- Indicadores de estado en la parte superior -->
+        <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 20px; margin-bottom: 15px;">
+            <!-- Indicador de calidad GPS -->
+            <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 20px;">
+                <span style="font-size: 12px; color: #94a3b8;">GPS:</span>
+                <div id="nav-gps-quality" style="display: flex; gap: 2px; align-items: flex-end; height: 18px;"></div>
+                <span id="nav-gps-quality-text" style="font-size: 11px; color: #94a3b8;">--</span>
+            </div>
+            
+            <!-- Indicador de confiabilidad de brújula -->
+            <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 20px;">
+                <span style="font-size: 12px; color: #94a3b8;">Brújula:</span>
+                <div id="nav-confidence-indicator" style="width: 12px; height: 12px; border-radius: 50%; background: #6b7280; transition: all 0.3s;"></div>
+                <span id="nav-confidence-text" style="font-size: 11px; color: #94a3b8;">--</span>
+            </div>
+        </div>
+        
+        <!-- Advertencia de calibración -->
+        <div id="nav-calibration-warning" style="display: none; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 10px 15px; border-radius: 10px; margin-bottom: 15px; font-size: 12px; text-align: center; width: calc(100% - 40px);"></div>
+        
+        <!-- Contenedor de la flecha con indicador de confianza -->
+        <div id="nav-arrow-container" style="transition: border-color 0.3s, opacity 0.3s;">
+            <div id="nav-arrow">⬆</div>
+        </div>
+        
+        <!-- Métrica principal: Distancia -->
         <div class="nav-metrics">
             <div class="nav-metric-item">
                 <div class="nav-metric-label">Distancia</div>
                 <div class="nav-metric-val large" id="nav-dist">0</div>
+                <div style="font-size: 14px; color: #64748b;">metros</div>
             </div>
         </div>
+        
+        <!-- Métricas secundarias -->
         <div class="nav-metrics">
             <div class="nav-metric-item">
-                <div class="nav-metric-label">Rumbo</div>
+                <div class="nav-metric-label">Rumbo al destino</div>
                 <div class="nav-metric-val" id="nav-bearing">0°</div>
             </div>
             <div class="nav-metric-item">
-                <div class="nav-metric-label">Precisión</div>
-                <div class="nav-metric-val" style="color:#10b981;" id="nav-accuracy">--</div>
+                <div class="nav-metric-label">Precisión GPS</div>
+                <div class="nav-metric-val" id="nav-accuracy" style="transition: color 0.3s;">--</div>
             </div>
         </div>
-        <div class="nav-metrics" style="opacity: 0.6; font-size: 11px;">
+        
+        <!-- Info técnica (más pequeña) -->
+        <div class="nav-metrics" style="opacity: 0.5; font-size: 10px; margin-top: 5px;">
             <div class="nav-metric-item">
-                <div class="nav-metric-label" style="font-size: 10px;">Orientación</div>
-                <div class="nav-metric-val" style="font-size: 12px;" id="nav-device-heading">--</div>
+                <div class="nav-metric-label" style="font-size: 9px;">Tu orientación</div>
+                <div class="nav-metric-val" style="font-size: 11px;" id="nav-device-heading">--</div>
+            </div>
+            <div class="nav-metric-item">
+                <div class="nav-metric-label" style="font-size: 9px;">Lecturas GPS</div>
+                <div class="nav-metric-val" style="font-size: 11px;" id="nav-gps-buffer">0/5</div>
             </div>
         </div>
+        
+        <!-- Leyenda de confiabilidad -->
+        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px; font-size: 10px; color: #64748b;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></div>
+                <span>Confiable</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></div>
+                <span>Precaución</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></div>
+                <span>Calibrando</span>
+            </div>
+        </div>
+        
         <button id="nav-stop-btn" onclick="stopNavigation()">SALIR</button>
     </div>
 
@@ -1025,7 +1078,7 @@
     <!-- MAPA -->
     <div id="map"></div>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script>
         window.addEventListener('unhandledrejection', function(event) {
             console.warn("Error asíncrono:", event.reason);
             const debugLog = document.getElementById('debug-log');
@@ -1067,6 +1120,47 @@
         let drawControl, drawToolbarVisible = false;
         let userLocationMarker = null, userLocationCircle = null;
         let autoUpdateTimer = null;
+        
+        // ====================================================================
+        // SISTEMA AVANZADO DE SENSORES Y GPS
+        // ====================================================================
+        
+        // Variables para GPS de alta precisión
+        let gpsWatchId = null;
+        let gpsReadings = []; // Buffer de lecturas GPS
+        const GPS_BUFFER_SIZE = 5; // Número de lecturas para promediar
+        const GPS_MAX_AGE = 3000; // Máximo 3 segundos de antigüedad
+        const GPS_ACCURACY_THRESHOLD = 20; // Umbral de precisión aceptable (metros)
+        let lastGoodPosition = null;
+        let gpsQuality = 'searching'; // 'searching', 'poor', 'fair', 'good', 'excellent'
+        
+        // Variables para sistema de orientación mejorado
+        let rawHeading = 0; // Lectura cruda del magnetómetro
+        let filteredHeading = 0; // Lectura filtrada (suavizada)
+        let headingHistory = []; // Historial para filtrado
+        const HEADING_BUFFER_SIZE = 10; // Lecturas para promediar
+        const HEADING_FILTER_ALPHA = 0.3; // Factor de suavizado (0-1, menor = más suave)
+        
+        // Variables para sensor fusion
+        let accelerometerData = { x: 0, y: 0, z: 0 };
+        let gyroscopeData = { alpha: 0, beta: 0, gamma: 0 };
+        let magnetometerCalibrated = false;
+        let lastOrientationUpdate = 0;
+        let orientationConfidence = 0; // 0-100%
+        let compassCalibrationNeeded = false;
+        
+        // Sensores modernos (Generic Sensor API)
+        let absoluteOrientationSensor = null;
+        let accelerometer = null;
+        let gyroscope = null;
+        let magnetometer = null;
+        let sensorsAvailable = {
+            absoluteOrientation: false,
+            accelerometer: false,
+            gyroscope: false,
+            magnetometer: false,
+            deviceOrientation: false
+        };
         
         // CONFIGURACIÓN
         const CRTM05_DEF = '+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +units=m +no_defs';
@@ -2626,23 +2720,304 @@
             closeNavSetup();
             document.getElementById('nav-dashboard').style.display = 'flex';
             
-            // Iniciar sensor de orientación del dispositivo
+            // Reset GPS buffer
+            gpsReadings = [];
+            lastGoodPosition = null;
+            gpsQuality = 'searching';
+            updateGPSQualityIndicator();
+            
+            // Iniciar sensor de orientación del dispositivo (sistema avanzado)
             startDeviceOrientation();
             
+            // Iniciar loop de sensor fusion
+            requestAnimationFrame(sensorFusionLoop);
+            
             if (navigator.geolocation) {
+                // Usar watchPosition con configuración optimizada para alta precisión
                 navWatchId = navigator.geolocation.watchPosition(
-                    updateNavigation,
-                    (error) => {
-                        console.error("Error GPS:", error);
-                        showNotification("Error en GPS", "error");
-                    },
+                    processGPSReading,
+                    handleGPSError,
                     {
-                        enableHighAccuracy: true,
-                        maximumAge: 0,
-                        timeout: 5000
+                        enableHighAccuracy: true,  // Usar GPS real, no WiFi/Cell
+                        maximumAge: GPS_MAX_AGE,   // No usar lecturas muy antiguas
+                        timeout: 10000             // Dar más tiempo para obtener buena señal
                     }
                 );
+                
+                showNotification("🛰️ Conectando GPS de alta precisión...", "success");
+            } else {
+                showNotification("❌ GPS no disponible", "error");
             }
+        }
+        
+        // Procesar lectura GPS con filtrado
+        function processGPSReading(pos) {
+            const accuracy = pos.coords.accuracy;
+            const timestamp = pos.timestamp;
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const altitude = pos.coords.altitude;
+            const speed = pos.coords.speed;
+            const heading = pos.coords.heading;
+            
+            // Crear objeto de lectura
+            const reading = {
+                lat,
+                lng,
+                accuracy,
+                timestamp,
+                altitude,
+                speed,
+                heading
+            };
+            
+            // Determinar calidad de la lectura
+            let quality = 'poor';
+            if (accuracy <= 5) {
+                quality = 'excellent';
+            } else if (accuracy <= 10) {
+                quality = 'good';
+            } else if (accuracy <= 20) {
+                quality = 'fair';
+            }
+            
+            // Solo agregar lecturas con precisión aceptable al buffer
+            if (accuracy <= 50) { // Máximo 50m de error
+                gpsReadings.push(reading);
+                
+                // Mantener solo las últimas N lecturas
+                while (gpsReadings.length > GPS_BUFFER_SIZE) {
+                    gpsReadings.shift();
+                }
+                
+                // Si es una buena lectura, guardarla como última buena posición
+                if (accuracy <= GPS_ACCURACY_THRESHOLD) {
+                    lastGoodPosition = reading;
+                }
+            }
+            
+            // Actualizar indicador de calidad GPS
+            gpsQuality = quality;
+            updateGPSQualityIndicator();
+            
+            // Calcular posición filtrada
+            const filteredPos = calculateFilteredPosition();
+            
+            if (filteredPos) {
+                updateNavigationDisplay(filteredPos);
+            }
+            
+            // Log para debug
+            console.log(`📍 GPS: ±${accuracy.toFixed(1)}m (${quality}) - Buffer: ${gpsReadings.length}/${GPS_BUFFER_SIZE}`);
+        }
+        
+        // Calcular posición filtrada usando el buffer de lecturas
+        function calculateFilteredPosition() {
+            if (gpsReadings.length === 0) return null;
+            
+            // Si tenemos pocas lecturas, usar la mejor disponible
+            if (gpsReadings.length < 3) {
+                // Encontrar la lectura con mejor precisión
+                let best = gpsReadings[0];
+                for (const r of gpsReadings) {
+                    if (r.accuracy < best.accuracy) best = r;
+                }
+                return best;
+            }
+            
+            // Calcular promedio ponderado por precisión (inverso del error)
+            let weightSum = 0;
+            let latSum = 0;
+            let lngSum = 0;
+            let accuracySum = 0;
+            
+            for (const reading of gpsReadings) {
+                // Peso inversamente proporcional al error^2
+                const weight = 1 / (reading.accuracy * reading.accuracy);
+                weightSum += weight;
+                latSum += reading.lat * weight;
+                lngSum += reading.lng * weight;
+                accuracySum += reading.accuracy * weight;
+            }
+            
+            return {
+                lat: latSum / weightSum,
+                lng: lngSum / weightSum,
+                accuracy: accuracySum / weightSum,
+                timestamp: Date.now()
+            };
+        }
+        
+        // Actualizar display de navegación con posición filtrada
+        function updateNavigationDisplay(pos) {
+            const user = L.latLng(pos.lat, pos.lng);
+            const dist = user.distanceTo(targetLatLng);
+            
+            // Actualizar distancia
+            document.getElementById('nav-dist').textContent = Math.round(dist);
+            
+            // Mostrar precisión con color según calidad
+            const accElement = document.getElementById('nav-accuracy');
+            accElement.textContent = `±${Math.round(pos.accuracy)}m`;
+            
+            if (pos.accuracy <= 5) {
+                accElement.style.color = '#10b981'; // Verde
+            } else if (pos.accuracy <= 10) {
+                accElement.style.color = '#22c55e'; // Verde claro
+            } else if (pos.accuracy <= 20) {
+                accElement.style.color = '#f59e0b'; // Amarillo
+            } else {
+                accElement.style.color = '#ef4444'; // Rojo
+            }
+            
+            // Calcular rumbo hacia el objetivo (bearing)
+            const lat1 = pos.lat * Math.PI / 180;
+            const lat2 = targetLatLng.lat * Math.PI / 180;
+            const dLng = (targetLatLng.lng - pos.lng) * Math.PI / 180;
+            
+            const y = Math.sin(dLng) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) - 
+                     Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+            targetBearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+            
+            document.getElementById('nav-bearing').textContent = Math.round(targetBearing) + '°';
+            
+            // Mostrar orientación del dispositivo
+            document.getElementById('nav-device-heading').textContent = Math.round(deviceHeading) + '°';
+            
+            // Calcular el ángulo de rotación con normalización correcta
+            let rotationAngle = targetBearing - deviceHeading;
+            
+            // Normalizar el ángulo al rango [-180, 180]
+            while (rotationAngle > 180) rotationAngle -= 360;
+            while (rotationAngle < -180) rotationAngle += 360;
+            
+            document.getElementById('nav-arrow-container').style.transform = `rotate(${rotationAngle}deg)`;
+            
+            // Actualizar indicadores de confiabilidad
+            updateConfidenceIndicator();
+            
+            // Actualizar contador de buffer GPS
+            const bufferEl = document.getElementById('nav-gps-buffer');
+            if (bufferEl) {
+                bufferEl.textContent = `${gpsReadings.length}/${GPS_BUFFER_SIZE}`;
+            }
+            
+            // Alerta de proximidad
+            if (dist < 5) {
+                showNotification("🎯 ¡Llegaste al destino!", "success");
+                // Vibrar si está disponible
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
+            } else if (dist < 10) {
+                document.getElementById('nav-dist').style.color = '#10b981';
+            } else {
+                document.getElementById('nav-dist').style.color = '#10b981'; // Reset
+            }
+        }
+        
+        // Manejar errores de GPS
+        function handleGPSError(error) {
+            console.error("Error GPS:", error);
+            
+            let message = "";
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    message = "❌ Permiso GPS denegado";
+                    gpsQuality = 'error';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = "⚠️ Señal GPS no disponible";
+                    gpsQuality = 'searching';
+                    // Usar última buena posición si existe
+                    if (lastGoodPosition) {
+                        showNotification("📍 Usando última ubicación conocida", "info");
+                        updateNavigationDisplay(lastGoodPosition);
+                    }
+                    break;
+                case error.TIMEOUT:
+                    message = "⏱️ Tiempo agotado buscando GPS";
+                    gpsQuality = 'searching';
+                    break;
+                default:
+                    message = "❌ Error GPS desconocido";
+                    gpsQuality = 'error';
+            }
+            
+            updateGPSQualityIndicator();
+            showNotification(message, "error");
+        }
+        
+        // Actualizar indicador visual de calidad GPS
+        function updateGPSQualityIndicator() {
+            const indicator = document.getElementById('nav-gps-quality');
+            const qualityText = document.getElementById('nav-gps-quality-text');
+            
+            if (!indicator) return;
+            
+            let color, bars, text;
+            
+            switch (gpsQuality) {
+                case 'excellent':
+                    color = '#10b981';
+                    bars = 4;
+                    text = 'Excelente';
+                    break;
+                case 'good':
+                    color = '#22c55e';
+                    bars = 3;
+                    text = 'Buena';
+                    break;
+                case 'fair':
+                    color = '#f59e0b';
+                    bars = 2;
+                    text = 'Regular';
+                    break;
+                case 'poor':
+                    color = '#f97316';
+                    bars = 1;
+                    text = 'Débil';
+                    break;
+                case 'searching':
+                    color = '#6b7280';
+                    bars = 0;
+                    text = 'Buscando...';
+                    break;
+                case 'error':
+                    color = '#ef4444';
+                    bars = 0;
+                    text = 'Error';
+                    break;
+                default:
+                    color = '#6b7280';
+                    bars = 0;
+                    text = '--';
+            }
+            
+            // Actualizar barras de señal
+            indicator.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                const bar = document.createElement('div');
+                bar.style.cssText = `
+                    width: 4px;
+                    height: ${6 + i * 4}px;
+                    background: ${i < bars ? color : '#374151'};
+                    border-radius: 1px;
+                    transition: all 0.3s;
+                `;
+                indicator.appendChild(bar);
+            }
+            
+            if (qualityText) {
+                qualityText.textContent = text;
+                qualityText.style.color = color;
+            }
+        }
+        
+        // Función legacy mantenida para compatibilidad
+        function updateNavigation(pos) {
+            processGPSReading(pos);
         }
         
         function startNavigation() {
@@ -2692,77 +3067,465 @@
             while (rotationAngle < -180) rotationAngle += 360;
             
             document.getElementById('nav-arrow-container').style.transform = `rotate(${rotationAngle}deg)`;
+            
+            // Actualizar indicador de confiabilidad
+            updateConfidenceIndicator();
         }
         
         
         // ====================================================================
-        // FUNCIONES DE ORIENTACIÓN DEL DISPOSITIVO (BRÚJULA)
+        // SISTEMA AVANZADO DE ORIENTACIÓN Y SENSORES
         // ====================================================================
         
-        function startDeviceOrientation() {
-            // Detectar si el navegador soporta orientación
+        // Inicializar todos los sensores disponibles
+        async function initAdvancedSensors() {
+            console.log('🧭 Inicializando sensores avanzados...');
+            
+            // 1. Intentar Generic Sensor API (más precisa, Chrome 67+)
+            await initGenericSensors();
+            
+            // 2. Fallback a DeviceOrientation API
+            initDeviceOrientationSensors();
+            
+            // 3. Iniciar loop de actualización de sensores
+            requestAnimationFrame(sensorFusionLoop);
+            
+            logSensorStatus();
+        }
+        
+        // Inicializar Generic Sensor API (si está disponible)
+        async function initGenericSensors() {
+            // AbsoluteOrientationSensor - El más preciso (fusiona todos los sensores)
+            if ('AbsoluteOrientationSensor' in window) {
+                try {
+                    const permissionStatus = await navigator.permissions.query({ name: 'accelerometer' });
+                    if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+                        absoluteOrientationSensor = new AbsoluteOrientationSensor({ frequency: 60, referenceFrame: 'device' });
+                        absoluteOrientationSensor.addEventListener('reading', handleAbsoluteOrientation);
+                        absoluteOrientationSensor.addEventListener('error', (e) => {
+                            console.warn('AbsoluteOrientationSensor error:', e.error.name);
+                            sensorsAvailable.absoluteOrientation = false;
+                        });
+                        absoluteOrientationSensor.start();
+                        sensorsAvailable.absoluteOrientation = true;
+                        console.log('✅ AbsoluteOrientationSensor activo');
+                    }
+                } catch (e) {
+                    console.log('AbsoluteOrientationSensor no disponible:', e.message);
+                }
+            }
+            
+            // Accelerometer
+            if ('Accelerometer' in window) {
+                try {
+                    accelerometer = new Accelerometer({ frequency: 60 });
+                    accelerometer.addEventListener('reading', () => {
+                        accelerometerData = {
+                            x: accelerometer.x,
+                            y: accelerometer.y,
+                            z: accelerometer.z
+                        };
+                    });
+                    accelerometer.start();
+                    sensorsAvailable.accelerometer = true;
+                    console.log('✅ Accelerometer activo');
+                } catch (e) {
+                    console.log('Accelerometer no disponible:', e.message);
+                }
+            }
+            
+            // Gyroscope
+            if ('Gyroscope' in window) {
+                try {
+                    gyroscope = new Gyroscope({ frequency: 60 });
+                    gyroscope.addEventListener('reading', () => {
+                        gyroscopeData = {
+                            alpha: gyroscope.x,
+                            beta: gyroscope.y,
+                            gamma: gyroscope.z
+                        };
+                    });
+                    gyroscope.start();
+                    sensorsAvailable.gyroscope = true;
+                    console.log('✅ Gyroscope activo');
+                } catch (e) {
+                    console.log('Gyroscope no disponible:', e.message);
+                }
+            }
+            
+            // Magnetometer
+            if ('Magnetometer' in window) {
+                try {
+                    magnetometer = new Magnetometer({ frequency: 60 });
+                    magnetometer.addEventListener('reading', handleMagnetometerReading);
+                    magnetometer.start();
+                    sensorsAvailable.magnetometer = true;
+                    console.log('✅ Magnetometer activo');
+                } catch (e) {
+                    console.log('Magnetometer no disponible:', e.message);
+                }
+            }
+        }
+        
+        // Manejar lectura del AbsoluteOrientationSensor
+        function handleAbsoluteOrientation() {
+            if (!absoluteOrientationSensor) return;
+            
+            // Convertir quaternion a ángulos de Euler
+            const q = absoluteOrientationSensor.quaternion;
+            if (q) {
+                // Extraer heading (yaw) del quaternion
+                const heading = quaternionToHeading(q[0], q[1], q[2], q[3]);
+                
+                // Este sensor ya tiene fusion, alta confianza
+                rawHeading = heading;
+                orientationConfidence = 95;
+                magnetometerCalibrated = true;
+            }
+        }
+        
+        // Convertir quaternion a heading (azimuth)
+        function quaternionToHeading(x, y, z, w) {
+            // Calcular yaw (heading) desde quaternion
+            const siny_cosp = 2 * (w * z + x * y);
+            const cosy_cosp = 1 - 2 * (y * y + z * z);
+            let heading = Math.atan2(siny_cosp, cosy_cosp) * (180 / Math.PI);
+            
+            // Normalizar a 0-360
+            heading = (360 - heading) % 360;
+            return heading;
+        }
+        
+        // Manejar lectura del magnetómetro
+        function handleMagnetometerReading() {
+            if (!magnetometer) return;
+            
+            const mx = magnetometer.x;
+            const my = magnetometer.y;
+            const mz = magnetometer.z;
+            
+            // Calcular magnitud del campo magnético
+            const magnitude = Math.sqrt(mx * mx + my * my + mz * mz);
+            
+            // Detectar si hay interferencia magnética (campo muy fuerte o muy débil)
+            // El campo magnético terrestre normal es ~25-65 μT
+            if (magnitude < 20 || magnitude > 80) {
+                compassCalibrationNeeded = true;
+                orientationConfidence = Math.max(0, orientationConfidence - 10);
+            } else {
+                compassCalibrationNeeded = false;
+                magnetometerCalibrated = true;
+            }
+            
+            // Calcular heading desde magnetómetro (compensando con acelerómetro)
+            if (sensorsAvailable.accelerometer) {
+                const heading = calculateTiltCompensatedHeading(
+                    mx, my, mz,
+                    accelerometerData.x, accelerometerData.y, accelerometerData.z
+                );
+                
+                if (!sensorsAvailable.absoluteOrientation) {
+                    rawHeading = heading;
+                    orientationConfidence = compassCalibrationNeeded ? 40 : 75;
+                }
+            }
+        }
+        
+        // Calcular heading compensado por inclinación
+        function calculateTiltCompensatedHeading(mx, my, mz, ax, ay, az) {
+            // Normalizar acelerómetro
+            const aMag = Math.sqrt(ax * ax + ay * ay + az * az);
+            const axn = ax / aMag;
+            const ayn = ay / aMag;
+            const azn = az / aMag;
+            
+            // Calcular pitch y roll
+            const pitch = Math.asin(-axn);
+            const roll = Math.atan2(ayn, azn);
+            
+            // Compensar magnetómetro por inclinación
+            const mxh = mx * Math.cos(pitch) + mz * Math.sin(pitch);
+            const myh = mx * Math.sin(roll) * Math.sin(pitch) + my * Math.cos(roll) - mz * Math.sin(roll) * Math.cos(pitch);
+            
+            // Calcular heading
+            let heading = Math.atan2(-myh, mxh) * (180 / Math.PI);
+            
+            // Normalizar a 0-360
+            heading = (heading + 360) % 360;
+            
+            return heading;
+        }
+        
+        // Inicializar DeviceOrientation API (fallback)
+        function initDeviceOrientationSensors() {
             if (typeof DeviceOrientationEvent !== 'undefined') {
                 // iOS 13+ requiere permiso explícito
                 if (typeof DeviceOrientationEvent.requestPermission === 'function') {
                     DeviceOrientationEvent.requestPermission()
                         .then(response => {
                             if (response === 'granted') {
-                                window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-                                window.addEventListener('deviceorientation', handleOrientationFallback, true);
-                                orientationSupported = true;
+                                setupDeviceOrientationListeners();
                             } else {
                                 console.warn('Permiso de orientación denegado');
-                                showNotification('ℹ️ Brújula no disponible. La flecha apuntará al norte del objetivo.', 'info');
+                                showNotification('⚠️ Permiso de brújula denegado', 'error');
                             }
                         })
                         .catch(err => {
-                            console.error('Error requesting orientation permission:', err);
-                            window.addEventListener('deviceorientation', handleOrientationFallback, true);
+                            console.error('Error solicitando permiso:', err);
+                            // Intentar sin permiso (puede funcionar en algunos casos)
+                            setupDeviceOrientationListeners();
                         });
                 } else {
-                    // Android y otros navegadores no necesitan permiso
-                    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-                    window.addEventListener('deviceorientation', handleOrientationFallback, true);
-                    orientationSupported = true;
+                    // Android y otros navegadores
+                    setupDeviceOrientationListeners();
                 }
-            } else {
-                console.warn('DeviceOrientation no soportado');
-                showNotification('ℹ️ Tu dispositivo no soporta brújula. La flecha apuntará al norte del objetivo.', 'info');
             }
+        }
+        
+        function setupDeviceOrientationListeners() {
+            // Priorizar deviceorientationabsolute (más preciso)
+            window.addEventListener('deviceorientationabsolute', handleDeviceOrientation, true);
+            window.addEventListener('deviceorientation', handleDeviceOrientationFallback, true);
+            
+            // También escuchar movimiento del dispositivo para detectar si está quieto
+            window.addEventListener('devicemotion', handleDeviceMotion, true);
+            
+            sensorsAvailable.deviceOrientation = true;
+            orientationSupported = true;
+            console.log('✅ DeviceOrientation listeners activos');
+        }
+        
+        // Manejar deviceorientationabsolute (preferido)
+        function handleDeviceOrientation(event) {
+            if (sensorsAvailable.absoluteOrientation) return; // Preferir Generic Sensor API
+            
+            let heading = 0;
+            
+            if (event.webkitCompassHeading !== undefined) {
+                // iOS - webkitCompassHeading ya es el heading correcto
+                heading = event.webkitCompassHeading;
+                orientationConfidence = event.webkitCompassAccuracy ? 
+                    Math.max(0, 100 - event.webkitCompassAccuracy) : 70;
+            } else if (event.alpha !== null && event.absolute === true) {
+                // Android con orientación absoluta
+                // alpha = 0 cuando apunta al norte magnético
+                heading = (360 - event.alpha) % 360;
+                orientationConfidence = 70;
+            }
+            
+            rawHeading = heading;
+            magnetometerCalibrated = true;
+            lastOrientationUpdate = Date.now();
+        }
+        
+        // Fallback para deviceorientation no absoluta
+        function handleDeviceOrientationFallback(event) {
+            if (sensorsAvailable.absoluteOrientation) return;
+            if (lastOrientationUpdate > Date.now() - 100) return; // Ya tenemos datos absolutos recientes
+            
+            if (event.alpha !== null) {
+                // Orientación relativa - menos confiable
+                rawHeading = (360 - event.alpha) % 360;
+                orientationConfidence = 40; // Baja confianza
+                magnetometerCalibrated = false;
+            }
+        }
+        
+        // Manejar devicemotion para detectar estabilidad
+        function handleDeviceMotion(event) {
+            if (!event.acceleration) return;
+            
+            const acc = event.acceleration;
+            const movement = Math.sqrt(
+                (acc.x || 0) ** 2 + 
+                (acc.y || 0) ** 2 + 
+                (acc.z || 0) ** 2
+            );
+            
+            // Si el dispositivo está muy quieto, la brújula es más confiable
+            if (movement < 0.5) {
+                orientationConfidence = Math.min(100, orientationConfidence + 2);
+            } else if (movement > 3) {
+                // Mucho movimiento reduce la confianza
+                orientationConfidence = Math.max(20, orientationConfidence - 5);
+            }
+        }
+        
+        // Loop principal de sensor fusion
+        function sensorFusionLoop() {
+            // Aplicar filtro de paso bajo al heading
+            filteredHeading = applyLowPassFilter(rawHeading, filteredHeading, HEADING_FILTER_ALPHA);
+            
+            // Agregar al historial para suavizado adicional
+            headingHistory.push(filteredHeading);
+            if (headingHistory.length > HEADING_BUFFER_SIZE) {
+                headingHistory.shift();
+            }
+            
+            // Calcular heading final con promedio circular
+            deviceHeading = circularMean(headingHistory);
+            
+            // Continuar el loop si hay navegación activa
+            if (document.getElementById('nav-dashboard').style.display === 'flex') {
+                requestAnimationFrame(sensorFusionLoop);
+            }
+        }
+        
+        // Filtro de paso bajo para suavizar lecturas
+        function applyLowPassFilter(newValue, oldValue, alpha) {
+            // Manejar el cruce de 0/360 grados
+            let diff = newValue - oldValue;
+            if (diff > 180) diff -= 360;
+            if (diff < -180) diff += 360;
+            
+            return (oldValue + alpha * diff + 360) % 360;
+        }
+        
+        // Calcular promedio circular (para ángulos)
+        function circularMean(angles) {
+            if (angles.length === 0) return 0;
+            
+            let sinSum = 0;
+            let cosSum = 0;
+            
+            for (const angle of angles) {
+                const rad = angle * Math.PI / 180;
+                sinSum += Math.sin(rad);
+                cosSum += Math.cos(rad);
+            }
+            
+            let mean = Math.atan2(sinSum / angles.length, cosSum / angles.length) * 180 / Math.PI;
+            return (mean + 360) % 360;
+        }
+        
+        // Actualizar indicador visual de confiabilidad
+        function updateConfidenceIndicator() {
+            const indicator = document.getElementById('nav-confidence-indicator');
+            const confidenceText = document.getElementById('nav-confidence-text');
+            const calibrationWarning = document.getElementById('nav-calibration-warning');
+            
+            if (!indicator) return;
+            
+            let color, text, reliable;
+            
+            if (orientationConfidence >= 80) {
+                color = '#10b981'; // Verde
+                text = 'ALTA';
+                reliable = true;
+            } else if (orientationConfidence >= 50) {
+                color = '#f59e0b'; // Amarillo
+                text = 'MEDIA';
+                reliable = true;
+            } else if (orientationConfidence >= 30) {
+                color = '#f97316'; // Naranja
+                text = 'BAJA';
+                reliable = false;
+            } else {
+                color = '#ef4444'; // Rojo
+                text = 'MUY BAJA';
+                reliable = false;
+            }
+            
+            indicator.style.background = color;
+            indicator.style.boxShadow = `0 0 ${reliable ? '15' : '8'}px ${color}`;
+            
+            if (confidenceText) {
+                confidenceText.textContent = `${text} (${Math.round(orientationConfidence)}%)`;
+                confidenceText.style.color = color;
+            }
+            
+            // Mostrar advertencia de calibración si es necesario
+            if (calibrationWarning) {
+                if (compassCalibrationNeeded) {
+                    calibrationWarning.style.display = 'block';
+                    calibrationWarning.textContent = '⚠️ Mueve el teléfono en forma de 8 para calibrar';
+                } else if (!magnetometerCalibrated && orientationConfidence < 50) {
+                    calibrationWarning.style.display = 'block';
+                    calibrationWarning.textContent = '⚠️ Esperando calibración de brújula...';
+                } else {
+                    calibrationWarning.style.display = 'none';
+                }
+            }
+            
+            // Actualizar estilo de la flecha según confiabilidad
+            const arrowContainer = document.getElementById('nav-arrow-container');
+            if (arrowContainer) {
+                if (reliable) {
+                    arrowContainer.style.borderColor = color;
+                    arrowContainer.style.opacity = '1';
+                } else {
+                    arrowContainer.style.borderColor = '#475569';
+                    arrowContainer.style.opacity = '0.6';
+                }
+            }
+        }
+        
+        // Log del estado de sensores
+        function logSensorStatus() {
+            console.log('📊 Estado de sensores:');
+            console.log('  - AbsoluteOrientation:', sensorsAvailable.absoluteOrientation ? '✅' : '❌');
+            console.log('  - Accelerometer:', sensorsAvailable.accelerometer ? '✅' : '❌');
+            console.log('  - Gyroscope:', sensorsAvailable.gyroscope ? '✅' : '❌');
+            console.log('  - Magnetometer:', sensorsAvailable.magnetometer ? '✅' : '❌');
+            console.log('  - DeviceOrientation:', sensorsAvailable.deviceOrientation ? '✅' : '❌');
+        }
+        
+        // Función legacy mantenida para compatibilidad
+        function startDeviceOrientation() {
+            initAdvancedSensors();
         }
         
         function handleOrientation(event) {
-            // Evento con orientación absoluta (brújula magnética)
-            if (event.webkitCompassHeading !== undefined) {
-                // iOS usa webkitCompassHeading (0-360, 0=Norte, sentido horario)
-                deviceHeading = event.webkitCompassHeading;
-            } else if (event.alpha !== null) {
-                // Android con deviceorientationabsolute
-                // alpha: 0 = Norte, aumenta en sentido horario
-                deviceHeading = event.alpha;
-            }
+            // Redirigir a nueva función
+            handleDeviceOrientation(event);
         }
         
         function handleOrientationFallback(event) {
-            // Fallback para dispositivos sin orientación absoluta
-            if (event.alpha !== null) {
-                // Orientación relativa - menos precisa
-                // En algunos dispositivos alpha va en sentido contrario
-                if (event.absolute === false) {
-                    // Si sabemos que es relativa, usamos tal cual
-                    deviceHeading = event.alpha;
-                } else {
-                    // Por defecto, asumimos comportamiento estándar
-                    deviceHeading = event.alpha;
-                }
-            }
+            // Redirigir a nueva función
+            handleDeviceOrientationFallback(event);
         }
         
         function stopDeviceOrientation() {
-            window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
-            window.removeEventListener('deviceorientation', handleOrientationFallback, true);
+            // Detener Generic Sensor API
+            if (absoluteOrientationSensor) {
+                absoluteOrientationSensor.stop();
+                absoluteOrientationSensor = null;
+            }
+            if (accelerometer) {
+                accelerometer.stop();
+                accelerometer = null;
+            }
+            if (gyroscope) {
+                gyroscope.stop();
+                gyroscope = null;
+            }
+            if (magnetometer) {
+                magnetometer.stop();
+                magnetometer = null;
+            }
+            
+            // Detener DeviceOrientation listeners
+            window.removeEventListener('deviceorientationabsolute', handleDeviceOrientation, true);
+            window.removeEventListener('deviceorientation', handleDeviceOrientationFallback, true);
+            window.removeEventListener('devicemotion', handleDeviceMotion, true);
+            
+            // Reset variables
             deviceHeading = 0;
+            filteredHeading = 0;
+            rawHeading = 0;
+            headingHistory = [];
+            orientationConfidence = 0;
             orientationSupported = false;
+            magnetometerCalibrated = false;
+            
+            // Reset sensores disponibles
+            sensorsAvailable = {
+                absoluteOrientation: false,
+                accelerometer: false,
+                gyroscope: false,
+                magnetometer: false,
+                deviceOrientation: false
+            };
         }
         
         function stopNavigation() {
@@ -2936,12 +3699,15 @@
         }
         
         function waitForLibraries(cb) {
-            if(typeof L !== 'undefined' && typeof Papa !== 'undefined' && typeof proj4 !== 'undefined') {
+            if(typeof L !== 'undefined' && typeof proj4 !== 'undefined' && typeof Papa !== 'undefined') {
+                log("✅ Todas las librerías cargadas");
                 cb();
             } else {
+                log("⏳ Esperando librerías...");
                 setTimeout(() => waitForLibraries(cb), 100);
             }
         }
+
     </script>
 </body>
 </html>
