@@ -52,7 +52,7 @@
             z-index: 20000; justify-content: center; align-items: center; padding: 20px;
             animation: fadeIn 0.3s ease;
         }
-        #legal-modal { display: flex; }
+        /* Legal modal auto-hidden - bypass authentication */
         
         @keyframes fadeIn {
             from { opacity: 0; }
@@ -3707,6 +3707,47 @@
                 setTimeout(() => waitForLibraries(cb), 100);
             }
         }
+
+        // ====================================================================
+        // AUTO-INICIALIZACIÓN (sin advertencia ni PIN de acceso)
+        // ====================================================================
+        (function autoInit() {
+            // Ocultar modales de advertencia y login
+            var legalModal = document.getElementById('legal-modal');
+            var loginModal = document.getElementById('login-modal');
+            if (legalModal) legalModal.style.display = 'none';
+            if (loginModal) loginModal.style.display = 'none';
+
+            // Inicializar sistema de logs
+            initLogsSystem();
+
+            // Configurar usuario admin por defecto
+            currentUser = ADMIN_USER.name;
+            currentUserIsAdmin = true;
+            sessionId = generateSessionId();
+            sessionStartTime = Date.now();
+
+            // Inicializar base de datos de usuarios (para panel admin)
+            USERS_DATABASE = {};
+            USERS_DATABASE[ADMIN_USER.name] = ADMIN_USER.pin;
+
+            // Mostrar botón de administración
+            var adminBtn = document.getElementById('admin-btn');
+            if (adminBtn) adminBtn.style.display = 'block';
+
+            // Registrar inicio de sesión
+            sendLog('LOGIN', 'Usuario: ' + currentUser + ', Admin: true (auto-init)');
+
+            // Mostrar loader e iniciar mapa
+            var loader = document.getElementById('loader');
+            if (loader) loader.style.display = 'flex';
+
+            console.log("✅ Auto-inicialización completada, usuario:", currentUser);
+            waitForLibraries(initMap);
+
+            // Cargar usuarios CSV en segundo plano (para panel admin)
+            loadUsersFromCSV();
+        })();
 
     </script>
 </body>
