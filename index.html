@@ -1133,6 +1133,7 @@
         const GPS_ACCURACY_THRESHOLD = 20; // Umbral de precisión aceptable (metros)
         let lastGoodPosition = null;
         let gpsQuality = 'searching'; // 'searching', 'poor', 'fair', 'good', 'excellent'
+        let arrivedNotified = false; // Evitar alerta de llegada repetida
         
         // Variables para sistema de orientación mejorado
         let rawHeading = 0; // Lectura cruda del magnetómetro
@@ -2724,6 +2725,7 @@
             gpsReadings = [];
             lastGoodPosition = null;
             gpsQuality = 'searching';
+            arrivedNotified = false;
             updateGPSQualityIndicator();
             
             // Iniciar sensor de orientación del dispositivo (sistema avanzado)
@@ -2829,21 +2831,19 @@
             let weightSum = 0;
             let latSum = 0;
             let lngSum = 0;
-            let accuracySum = 0;
-            
+
             for (const reading of gpsReadings) {
                 // Peso inversamente proporcional al error^2
                 const weight = 1 / (reading.accuracy * reading.accuracy);
                 weightSum += weight;
                 latSum += reading.lat * weight;
                 lngSum += reading.lng * weight;
-                accuracySum += reading.accuracy * weight;
             }
             
             return {
                 lat: latSum / weightSum,
                 lng: lngSum / weightSum,
-                accuracy: accuracySum / weightSum,
+                accuracy: 1 / Math.sqrt(weightSum), // Propagación de error correcta
                 timestamp: Date.now()
             };
         }
@@ -2903,17 +2903,23 @@
                 bufferEl.textContent = `${gpsReadings.length}/${GPS_BUFFER_SIZE}`;
             }
             
-            // Alerta de proximidad
-            if (dist < 5) {
+            // Alerta de proximidad (solo una vez)
+            if (dist < 5 && !arrivedNotified) {
+                arrivedNotified = true;
                 showNotification("🎯 ¡Llegaste al destino!", "success");
                 // Vibrar si está disponible
                 if (navigator.vibrate) {
-                    navigator.vibrate([200, 100, 200]);
+                    navigator.vibrate([200, 100, 200, 100, 200]);
                 }
-            } else if (dist < 10) {
+            } else if (dist >= 10) {
+                arrivedNotified = false; // Resetear si se aleja
+            }
+
+            // Color de distancia según proximidad
+            if (dist < 10) {
                 document.getElementById('nav-dist').style.color = '#10b981';
             } else {
-                document.getElementById('nav-dist').style.color = '#10b981'; // Reset
+                document.getElementById('nav-dist').style.color = '#f0f0f0';
             }
         }
         
@@ -2930,10 +2936,13 @@
                 case error.POSITION_UNAVAILABLE:
                     message = "⚠️ Señal GPS no disponible";
                     gpsQuality = 'searching';
-                    // Usar última buena posición si existe
-                    if (lastGoodPosition) {
-                        showNotification("📍 Usando última ubicación conocida", "info");
+                    // Usar última buena posición si existe y no es muy antigua (máx 60s)
+                    if (lastGoodPosition && (Date.now() - lastGoodPosition.timestamp) < 60000) {
+                        var age = Math.round((Date.now() - lastGoodPosition.timestamp) / 1000);
+                        showNotification("📍 Última ubicación conocida (hace " + age + "s)", "info");
                         updateNavigationDisplay(lastGoodPosition);
+                    } else if (lastGoodPosition) {
+                        showNotification("📍 Ubicación guardada muy antigua, esperando GPS...", "error");
                     }
                     break;
                 case error.TIMEOUT:
@@ -3035,42 +3044,7 @@
             closeNavSetup();
         }
         
-        function updateNavigation(pos) {
-            const user = L.latLng(pos.coords.latitude, pos.coords.longitude);
-            const dist = user.distanceTo(targetLatLng);
-            
-            document.getElementById('nav-dist').textContent = Math.round(dist);
-            document.getElementById('nav-accuracy').textContent = `±${Math.round(pos.coords.accuracy)}m`;
-            
-            // Calcular rumbo hacia el objetivo (bearing)
-            const lat1 = user.lat * Math.PI / 180;
-            const lat2 = targetLatLng.lat * Math.PI / 180;
-            const dLng = (targetLatLng.lng - user.lng) * Math.PI / 180;
-            
-            const y = Math.sin(dLng) * Math.cos(lat2);
-            const x = Math.cos(lat1) * Math.sin(lat2) - 
-                     Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-            targetBearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-            
-            document.getElementById('nav-bearing').textContent = Math.round(targetBearing) + '°';
-            
-            // Mostrar orientación del dispositivo (debug)
-            document.getElementById('nav-device-heading').textContent = Math.round(deviceHeading) + '°';
-            
-            // Calcular el ángulo de rotación con normalización correcta
-            // Esto maneja correctamente el wraparound de 0-360 grados
-            let rotationAngle = targetBearing - deviceHeading;
-            
-            // Normalizar el ángulo al rango [-180, 180]
-            // Esto asegura que siempre tomamos el camino más corto
-            while (rotationAngle > 180) rotationAngle -= 360;
-            while (rotationAngle < -180) rotationAngle += 360;
-            
-            document.getElementById('nav-arrow-container').style.transform = `rotate(${rotationAngle}deg)`;
-            
-            // Actualizar indicador de confiabilidad
-            updateConfidenceIndicator();
-        }
+        // updateNavigation duplicada eliminada - se usa processGPSReading() + updateNavigationDisplay()
         
         
         // ====================================================================
