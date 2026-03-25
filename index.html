@@ -404,18 +404,22 @@
             z-index: 10002;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            overflow-y: auto;
+            padding-top: 30px;
+            padding-bottom: 120px;
+            box-sizing: border-box;
         }
         
         #nav-target-info {
-            position: absolute;
-            top: 40px;
             background: rgba(255,255,255,0.1);
             padding: 10px 20px;
             border-radius: 20px;
             font-size: 14px;
             color: #cbd5e1;
             font-weight: 500;
+            margin-bottom: 15px;
+            flex-shrink: 0;
         }
         
         #nav-arrow-container {
@@ -477,15 +481,18 @@
             font-size: 18px;
             font-weight: 700;
             cursor: pointer;
-            position: absolute;
+            position: fixed;
             bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10003;
             box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-            transition: all 0.2s;
+            transition: background 0.2s, box-shadow 0.2s;
         }
         
         #nav-stop-btn:hover {
             background: #dc2626;
-            transform: translateY(-2px);
+            transform: translateX(-50%) translateY(-2px);
             box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
         }
 
