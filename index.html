@@ -4,17 +4,27 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Visor Forestal ACOPAC - OSRO</title>
-    
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#10b981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Visor Forestal">
+
     <!-- Librerías desde CDN -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-    
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
     <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
+
+    <!-- Módulo de geodesia centralizado -->
+    <script src="geo.js" defer></script>
 
     <style>
         :root {
@@ -471,32 +481,225 @@
         #nav-stop-btn {
             background: #ef4444;
             color: white;
-            border: none;
-            padding: 18px 52px;
-            border-radius: 100px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            position: absolute;
-            bottom: 40px;
             box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-            transition: all 0.2s;
-        }
-        
-        #nav-stop-btn:hover {
-            background: #dc2626;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
         }
 
-        .leaflet-control-scale-line { 
-            border: 2px solid #374151; 
-            border-top: none; 
-            background: rgba(255,255,255,0.9); 
-            font-weight: 700; 
-            font-size: 11px; 
-            margin-bottom: 5px; 
-            margin-right: 10px; 
+        #nav-stop-btn:hover {
+            background: #dc2626;
+        }
+
+        .leaflet-control-scale-line {
+            border: 2px solid #374151;
+            border-top: none;
+            background: rgba(255,255,255,0.9);
+            font-weight: 700;
+            font-size: 11px;
+            margin-bottom: 5px;
+            margin-right: 10px;
+        }
+
+        /* --- INDICADOR DE ESTADO DE NAVEGACIÓN --- */
+        #nav-status-bar {
+            position: absolute;
+            top: 85px;
+            width: calc(100% - 40px);
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.3s;
+            z-index: 1;
+        }
+        #nav-status-bar.status-orientando {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        #nav-status-bar.status-activa {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        #nav-status-bar.status-debil {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* --- MODO HEADING (caminar/vehículo) --- */
+        #nav-heading-source {
+            font-size: 10px;
+            color: #64748b;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        /* --- BOTONES DESTINO / CANCELAR --- */
+        .nav-action-buttons {
+            display: flex;
+            gap: 12px;
+            position: absolute;
+            bottom: 40px;
+            width: calc(100% - 40px);
+            max-width: 400px;
+        }
+        .nav-action-buttons button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 100px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #nav-lock-btn {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        #nav-lock-btn:hover { background: #2563eb; }
+        #nav-lock-btn.locked {
+            background: #22c55e;
+        }
+
+        /* --- PANEL DESTINOS GUARDADOS --- */
+        #saved-destinations-panel {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+            z-index: 20000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .saved-dest-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 16px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        .saved-dest-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .saved-dest-item:hover { background: #f0fdf4; }
+        .saved-dest-item .dest-name { font-weight: 600; font-size: 14px; }
+        .saved-dest-item .dest-coords { font-size: 11px; color: #6b7280; }
+        .saved-dest-delete {
+            background: #fee2e2;
+            border: none;
+            color: #ef4444;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* --- MODO BRÚJULA SIMPLE --- */
+        #compass-mode-panel {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #0f172a;
+            z-index: 10003;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        #compass-heading-display {
+            font-size: 72px;
+            font-weight: 900;
+            color: #10b981;
+            margin-bottom: 8px;
+        }
+        #compass-cardinal {
+            font-size: 24px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 40px;
+        }
+        #compass-rose {
+            width: 60vw;
+            height: 60vw;
+            max-width: 280px;
+            max-height: 280px;
+            background: #1e293b;
+            border-radius: 50%;
+            border: 8px solid #334155;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 40px;
+            transition: transform 0.15s ease-out;
+        }
+
+        /* --- LOGGER DE CAMPO (panel oculto) --- */
+        #field-logger-panel {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%;
+            max-height: 40vh;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 10004;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 11px;
+            color: #94a3b8;
+            padding: 12px;
+        }
+        #field-logger-panel .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+        #field-logger-toggle {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            z-index: 10005;
+            background: rgba(15, 23, 42, 0.8);
+            color: #94a3b8;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 10px;
+            cursor: pointer;
+            display: none;
+        }
+
+        /* --- INDICADOR OFFLINE GLOBAL --- */
+        #offline-banner {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            text-align: center;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 30000;
         }
         
         /* --- LOADER y NOTIFICACIONES --- */
@@ -791,12 +994,14 @@
             <!-- SECCIÓN HERRAMIENTAS COMPLETAS -->
             <div class="menu-section">
                 <span class="section-title">Herramientas</span>
-                <button class="tool-btn" onclick="openNavSetup()">🧭 Navegar a Árbol</button>
-                <button class="tool-btn" onclick="showCoordModal()">📍 Ir a Coordenada</button>
-                <button class="tool-btn" onclick="document.getElementById('gpx-input').click()">🗺️ Cargar GPX/KML</button>
-                <button class="tool-btn" onclick="clearGPXLayers()">🗑️ Limpiar GPX</button>
-                <button class="tool-btn" onclick="toggleDrawingTools()">📐 Medición</button>
-                <button class="tool-btn" onclick="clearDrawings()">🧹 Limpiar Mediciones</button>
+                <button class="tool-btn" onclick="openNavSetup()" aria-label="Navegar a un árbol específico">🧭 Navegar a Árbol</button>
+                <button class="tool-btn" onclick="showCoordModal()" aria-label="Ir a coordenada CRTM05">📍 Ir a Coordenada</button>
+                <button class="tool-btn" onclick="openSavedDestinations()" aria-label="Ver destinos guardados">📌 Destinos Guardados</button>
+                <button class="tool-btn" onclick="startCompassMode()" aria-label="Brújula simple">🧭 Brújula Simple</button>
+                <button class="tool-btn" onclick="document.getElementById('gpx-input').click()" aria-label="Cargar archivo GPX o KML">🗺️ Cargar GPX/KML</button>
+                <button class="tool-btn" onclick="clearGPXLayers()" aria-label="Eliminar capas GPX">🗑️ Limpiar GPX</button>
+                <button class="tool-btn" onclick="toggleDrawingTools()" aria-label="Herramientas de medición">📐 Medición</button>
+                <button class="tool-btn" onclick="clearDrawings()" aria-label="Borrar mediciones">🧹 Limpiar Mediciones</button>
             </div>
 
             <!-- SECCIÓN CAPAS -->
@@ -845,9 +1050,10 @@
 
             <!-- ACCIONES FINALES -->
             <div class="menu-section" style="border:none;">
-                <button class="tool-btn" id="admin-btn" onclick="showAdminPanel()" style="display:none; background:linear-gradient(135deg, #ef4444, #dc2626); color:white;">⚙️ Administración</button>
-                <button class="tool-btn" id="reload-btn" onclick="manualReload()">🔄 Recargar Datos</button>
-                <button class="tool-btn" id="help-btn" onclick="showHelp()">❓ Ayuda</button>
+                <button class="tool-btn" id="admin-btn" onclick="showAdminPanel()" style="display:none; background:linear-gradient(135deg, #ef4444, #dc2626); color:white;" aria-label="Panel de administración">⚙️ Administración</button>
+                <button class="tool-btn" id="reload-btn" onclick="manualReload()" aria-label="Recargar datos desde servidor">🔄 Recargar Datos</button>
+                <button class="tool-btn" id="field-log-menu-btn" onclick="toggleFieldLogger()" style="font-size:11px;" aria-label="Logger de campo para depuración">📋 Logger de Campo</button>
+                <button class="tool-btn" id="help-btn" onclick="showHelp()" aria-label="Guía de ayuda">❓ Ayuda</button>
             </div>
         </div>
     </div>
@@ -874,6 +1080,9 @@
             </div>
         </div>
         
+        <!-- Barra de estado de navegación -->
+        <div id="nav-status-bar" class="status-orientando">Orientando...</div>
+
         <!-- Advertencia de calibración -->
         <div id="nav-calibration-warning" style="display: none; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 10px 15px; border-radius: 10px; margin-bottom: 15px; font-size: 12px; text-align: center; width: calc(100% - 40px);"></div>
         
@@ -931,7 +1140,14 @@
             </div>
         </div>
         
-        <button id="nav-stop-btn" onclick="stopNavigation()">SALIR</button>
+        <!-- Fuente de heading -->
+        <div id="nav-heading-source">Fuente: sensor</div>
+
+        <!-- Botones de acción -->
+        <div class="nav-action-buttons">
+            <button id="nav-lock-btn" onclick="toggleLockDestination()" aria-label="Fijar destino">📌 Fijar Destino</button>
+            <button id="nav-stop-btn" onclick="stopNavigation()" aria-label="Detener navegación">SALIR</button>
+        </div>
     </div>
 
     <!-- MODALES VARIOS -->
@@ -1006,6 +1222,16 @@
                 <li><span style="color: #f59e0b;">●</span> <strong>Amarillo:</strong> Sin definir</li>
             </ul>
         </div>
+        <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 14px; font-weight: 600; color: var(--primary-dark); margin-bottom: 10px;">📶 Uso sin Señal</h3>
+            <ul style="margin-left: 20px; color: var(--text-main); line-height: 1.6; font-size: 13px;">
+                <li><strong>GPS:</strong> Funciona sin datos móviles (solo necesita cielo abierto)</li>
+                <li><strong>Brújula:</strong> Funciona sin conexión (sensor del dispositivo)</li>
+                <li><strong>Mapas:</strong> Se cachean automáticamente las zonas visitadas</li>
+                <li><strong>Datos:</strong> Se guardan en caché local por 7 días</li>
+                <li><strong>Recomendación:</strong> Abra el visor en oficina, navegue la zona de trabajo y espere "Datos sincronizados" antes de ir a campo</li>
+            </ul>
+        </div>
         <button onclick="document.getElementById('help-panel').style.display='none'; document.getElementById('help-overlay').style.display='none';" class="btn-accept" style="width: 100%; margin-top: 0;">Entendido</button>
     </div>
     
@@ -1075,10 +1301,96 @@
         </div>
     </div>
     
+    <!-- BANNER OFFLINE -->
+    <div id="offline-banner">Modo offline: usando datos descargados previamente</div>
+
+    <!-- PANEL DE DESTINOS GUARDADOS -->
+    <div id="saved-destinations-panel">
+        <div class="saved-dest-content">
+            <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">📌 Destinos Guardados</h3>
+            <div id="saved-dest-list"></div>
+            <div style="display:flex; gap:10px; margin-top:16px;">
+                <button class="btn-cancel" onclick="closeSavedDestinations()" style="flex:1;">Cerrar</button>
+                <button class="btn-accept" onclick="clearAllSavedDestinations()" style="flex:1; background:#ef4444;">Borrar Todos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODO BRÚJULA SIMPLE -->
+    <div id="compass-mode-panel">
+        <div style="position:absolute; top:40px; font-size:14px; color:#94a3b8;">Brújula Simple</div>
+        <div id="compass-heading-display">0°</div>
+        <div id="compass-cardinal">N</div>
+        <div id="compass-rose">
+            <div style="font-size:30vw; max-font-size:120px; color:#10b981;">⬆</div>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:20px; font-size:12px; color:#64748b;">
+            <span>Sensor: <span id="compass-sensor-type">--</span></span>
+            <span>Confianza: <span id="compass-confidence">--</span></span>
+        </div>
+        <button onclick="stopCompassMode()" style="background:#ef4444; color:white; border:none; padding:16px 48px; border-radius:100px; font-size:16px; font-weight:700; cursor:pointer; position:absolute; bottom:40px;">SALIR</button>
+    </div>
+
+    <!-- LOGGER DE CAMPO (oculto por defecto) -->
+    <div id="field-logger-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="color:#10b981; font-weight:700;">Logger de Campo</span>
+            <div>
+                <button onclick="exportFieldLog()" style="background:#334155; border:none; color:#94a3b8; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Exportar</button>
+                <button onclick="clearFieldLog()" style="background:#334155; border:none; color:#94a3b8; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Limpiar</button>
+                <button onclick="toggleFieldLogger()" style="background:#334155; border:none; color:#94a3b8; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">✕</button>
+            </div>
+        </div>
+        <div id="field-log-entries"></div>
+    </div>
+
     <!-- MAPA -->
     <div id="map"></div>
 
     <script>
+        // ====================================================================
+        // REGISTRO DE SERVICE WORKER (PWA)
+        // ====================================================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => {
+                        console.log('✅ Service Worker registrado:', reg.scope);
+                        // Notificar actualización disponible
+                        reg.addEventListener('updatefound', () => {
+                            const newWorker = reg.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'activated') {
+                                    showNotification('Nueva versión disponible. Recargue para actualizar.', 'info');
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => console.warn('SW registro falló:', err));
+            });
+        }
+
+        // ====================================================================
+        // DETECCIÓN ONLINE/OFFLINE
+        // ====================================================================
+        window.addEventListener('online', () => {
+            document.getElementById('offline-banner').style.display = 'none';
+            if (typeof updateCacheStatus === 'function') updateCacheStatus('online', new Date());
+            if (typeof showNotification === 'function') showNotification('Conexión restaurada', 'success');
+            // Reenviar logs pendientes
+            if (typeof sendPendingLogs === 'function') sendPendingLogs();
+        });
+        window.addEventListener('offline', () => {
+            document.getElementById('offline-banner').style.display = 'block';
+            if (typeof updateCacheStatus === 'function') updateCacheStatus('offline', null);
+        });
+        // Mostrar banner si ya estamos offline al cargar
+        if (!navigator.onLine) {
+            document.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('offline-banner').style.display = 'block';
+            });
+        }
+
         window.addEventListener('unhandledrejection', function(event) {
             console.warn("Error asíncrono:", event.reason);
             const debugLog = document.getElementById('debug-log');
@@ -1120,6 +1432,13 @@
         let drawControl, drawToolbarVisible = false;
         let userLocationMarker = null, userLocationCircle = null;
         let autoUpdateTimer = null;
+        let destinationLocked = false; // Destino fijado
+        let compassModeActive = false; // Modo brújula simple
+        let fieldLogEntries = []; // Logger de campo
+        const MAX_FIELD_LOG = 200;
+        let fieldLoggerVisible = false;
+        let currentSpeed = null; // Velocidad GPS actual para modo caminar/vehículo
+        let currentGPSHeading = null; // Heading GPS para modo vehículo
         
         // ====================================================================
         // SISTEMA AVANZADO DE SENSORES Y GPS
@@ -2710,15 +3029,29 @@
         }
         
         function startDirectNavigation(lat, lng, label) {
+            // Si el destino está fijado, no permitir cambiar
+            if (destinationLocked && targetLatLng) {
+                showNotification('Destino fijado. Desbloquee primero.', 'info');
+                return;
+            }
+
             // Registrar inicio de navegación
             console.log('📊 Navegación iniciada:', label);
             sendLog('NAVEGACION_INICIADA', `Destino: ${label}, Lat: ${lat}, Lon: ${lng}`);
-            
+
             targetLatLng = L.latLng(lat, lng);
             document.getElementById('nav-target-info').textContent = label;
             map.closePopup();
             closeNavSetup();
             document.getElementById('nav-dashboard').style.display = 'flex';
+
+            // Reset estado de lock
+            destinationLocked = false;
+            const lockBtn = document.getElementById('nav-lock-btn');
+            if (lockBtn) {
+                lockBtn.textContent = '📌 Fijar Destino';
+                lockBtn.classList.remove('locked');
+            }
             
             // Reset GPS buffer
             gpsReadings = [];
@@ -2759,7 +3092,11 @@
             const altitude = pos.coords.altitude;
             const speed = pos.coords.speed;
             const heading = pos.coords.heading;
-            
+
+            // Guardar velocidad y heading GPS para modo caminar/vehículo
+            currentSpeed = speed;
+            currentGPSHeading = heading;
+
             // Crear objeto de lectura
             const reading = {
                 lat,
@@ -2770,7 +3107,7 @@
                 speed,
                 heading
             };
-            
+
             // Determinar calidad de la lectura
             let quality = 'poor';
             if (accuracy <= 5) {
@@ -2780,33 +3117,54 @@
             } else if (accuracy <= 20) {
                 quality = 'fair';
             }
-            
+
             // Solo agregar lecturas con precisión aceptable al buffer
             if (accuracy <= 50) { // Máximo 50m de error
                 gpsReadings.push(reading);
-                
+
                 // Mantener solo las últimas N lecturas
                 while (gpsReadings.length > GPS_BUFFER_SIZE) {
                     gpsReadings.shift();
                 }
-                
+
                 // Si es una buena lectura, guardarla como última buena posición
                 if (accuracy <= GPS_ACCURACY_THRESHOLD) {
                     lastGoodPosition = reading;
                 }
             }
-            
+
             // Actualizar indicador de calidad GPS
             gpsQuality = quality;
             updateGPSQualityIndicator();
-            
+
             // Calcular posición filtrada
             const filteredPos = calculateFilteredPosition();
-            
+
             if (filteredPos) {
                 updateNavigationDisplay(filteredPos);
             }
-            
+
+            // Actualizar barra de estado de navegación
+            updateNavStatusBar(accuracy, quality);
+
+            // Registrar en logger de campo
+            if (typeof createFieldLogEntry === 'function') {
+                addFieldLogEntry(createFieldLogEntry({
+                    lat, lon: lng, accuracy, altitude, speed,
+                    gpsHeading: heading,
+                    sensorHeading: deviceHeading,
+                    headingSource: currentSpeed >= 1.5 && currentGPSHeading != null ? 'gps' : 'sensor',
+                    bearingToDest: targetBearing,
+                    distToDest: filteredPos ? distanceHaversine(
+                        { lat: filteredPos.lat, lon: filteredPos.lng },
+                        { lat: targetLatLng.lat, lon: targetLatLng.lng }
+                    ) : null,
+                    gpsQuality: quality,
+                    confidence: orientationConfidence,
+                    sensorsActive: Object.entries(sensorsAvailable).filter(([,v]) => v).map(([k]) => k).join(',')
+                }));
+            }
+
             // Log para debug
             console.log(`📍 GPS: ±${accuracy.toFixed(1)}m (${quality}) - Buffer: ${gpsReadings.length}/${GPS_BUFFER_SIZE}`);
         }
@@ -2850,70 +3208,106 @@
         
         // Actualizar display de navegación con posición filtrada
         function updateNavigationDisplay(pos) {
-            const user = L.latLng(pos.lat, pos.lng);
-            const dist = user.distanceTo(targetLatLng);
-            
-            // Actualizar distancia
-            document.getElementById('nav-dist').textContent = Math.round(dist);
-            
+            const userPos = { lat: pos.lat, lon: pos.lng };
+            const destPos = { lat: targetLatLng.lat, lon: targetLatLng.lng };
+
+            // Usar geo.js para distancia y bearing
+            const dist = (typeof distanceHaversine === 'function')
+                ? distanceHaversine(userPos, destPos)
+                : L.latLng(pos.lat, pos.lng).distanceTo(targetLatLng);
+
+            // Actualizar distancia con formato inteligente (m / km)
+            const distEl = document.getElementById('nav-dist');
+            if (dist >= 1000) {
+                distEl.textContent = (dist / 1000).toFixed(2);
+                const unitEl = distEl.parentElement.querySelector('div:last-child');
+                if (unitEl) unitEl.textContent = 'km';
+            } else {
+                distEl.textContent = Math.round(dist);
+                const unitEl = distEl.parentElement.querySelector('div:last-child');
+                if (unitEl) unitEl.textContent = 'metros';
+            }
+
             // Mostrar precisión con color según calidad
             const accElement = document.getElementById('nav-accuracy');
             accElement.textContent = `±${Math.round(pos.accuracy)}m`;
-            
+
             if (pos.accuracy <= 5) {
-                accElement.style.color = '#10b981'; // Verde
+                accElement.style.color = '#10b981';
             } else if (pos.accuracy <= 10) {
-                accElement.style.color = '#22c55e'; // Verde claro
+                accElement.style.color = '#22c55e';
             } else if (pos.accuracy <= 20) {
-                accElement.style.color = '#f59e0b'; // Amarillo
+                accElement.style.color = '#f59e0b';
             } else {
-                accElement.style.color = '#ef4444'; // Rojo
+                accElement.style.color = '#ef4444';
             }
-            
-            // Calcular rumbo hacia el objetivo (bearing)
-            const lat1 = pos.lat * Math.PI / 180;
-            const lat2 = targetLatLng.lat * Math.PI / 180;
-            const dLng = (targetLatLng.lng - pos.lng) * Math.PI / 180;
-            
-            const y = Math.sin(dLng) * Math.cos(lat2);
-            const x = Math.cos(lat1) * Math.sin(lat2) - 
-                     Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-            targetBearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-            
+
+            // Calcular rumbo hacia el objetivo usando geo.js
+            targetBearing = (typeof bearing === 'function')
+                ? bearing(userPos, destPos)
+                : (() => {
+                    const lat1r = pos.lat * Math.PI / 180;
+                    const lat2r = targetLatLng.lat * Math.PI / 180;
+                    const dLng = (targetLatLng.lng - pos.lng) * Math.PI / 180;
+                    const y = Math.sin(dLng) * Math.cos(lat2r);
+                    const x = Math.cos(lat1r) * Math.sin(lat2r) -
+                             Math.sin(lat1r) * Math.cos(lat2r) * Math.cos(dLng);
+                    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+                })();
+
             document.getElementById('nav-bearing').textContent = Math.round(targetBearing) + '°';
-            
+
+            // Modo caminar/vehículo: seleccionar fuente de heading
+            let activeHeading = deviceHeading;
+            let headingSource = 'sensor';
+            if (typeof selectHeadingSource === 'function') {
+                const hs = selectHeadingSource(currentSpeed, deviceHeading, currentGPSHeading);
+                activeHeading = hs.heading;
+                headingSource = hs.source;
+            }
+
             // Mostrar orientación del dispositivo
-            document.getElementById('nav-device-heading').textContent = Math.round(deviceHeading) + '°';
-            
-            // Calcular el ángulo de rotación con normalización correcta
-            let rotationAngle = targetBearing - deviceHeading;
-            
-            // Normalizar el ángulo al rango [-180, 180]
-            while (rotationAngle > 180) rotationAngle -= 360;
-            while (rotationAngle < -180) rotationAngle += 360;
-            
+            document.getElementById('nav-device-heading').textContent = Math.round(activeHeading) + '°';
+
+            // Mostrar fuente de heading
+            const hsEl = document.getElementById('nav-heading-source');
+            if (hsEl) {
+                hsEl.textContent = headingSource === 'gps'
+                    ? 'Fuente: GPS (vehículo)'
+                    : 'Fuente: brújula (caminando)';
+            }
+
+            // Calcular rotación de la flecha usando normalización
+            const rotationAngle = (typeof normalizeAngle === 'function')
+                ? normalizeAngle(targetBearing - activeHeading)
+                : (() => {
+                    let r = targetBearing - activeHeading;
+                    while (r > 180) r -= 360;
+                    while (r < -180) r += 360;
+                    return r;
+                })();
+
             document.getElementById('nav-arrow-container').style.transform = `rotate(${rotationAngle}deg)`;
-            
+
             // Actualizar indicadores de confiabilidad
             updateConfidenceIndicator();
-            
+
             // Actualizar contador de buffer GPS
             const bufferEl = document.getElementById('nav-gps-buffer');
             if (bufferEl) {
                 bufferEl.textContent = `${gpsReadings.length}/${GPS_BUFFER_SIZE}`;
             }
-            
+
             // Alerta de proximidad
             if (dist < 5) {
-                showNotification("🎯 ¡Llegaste al destino!", "success");
-                // Vibrar si está disponible
+                showNotification("¡Llegaste al destino!", "success");
                 if (navigator.vibrate) {
                     navigator.vibrate([200, 100, 200]);
                 }
             } else if (dist < 10) {
-                document.getElementById('nav-dist').style.color = '#10b981';
+                distEl.style.color = '#10b981';
             } else {
-                document.getElementById('nav-dist').style.color = '#10b981'; // Reset
+                distEl.style.color = '#10b981';
             }
         }
         
@@ -3034,44 +3428,6 @@
             startDirectNavigation(lat, lng, `${exp} - ${treeId}`);
             closeNavSetup();
         }
-        
-        function updateNavigation(pos) {
-            const user = L.latLng(pos.coords.latitude, pos.coords.longitude);
-            const dist = user.distanceTo(targetLatLng);
-            
-            document.getElementById('nav-dist').textContent = Math.round(dist);
-            document.getElementById('nav-accuracy').textContent = `±${Math.round(pos.coords.accuracy)}m`;
-            
-            // Calcular rumbo hacia el objetivo (bearing)
-            const lat1 = user.lat * Math.PI / 180;
-            const lat2 = targetLatLng.lat * Math.PI / 180;
-            const dLng = (targetLatLng.lng - user.lng) * Math.PI / 180;
-            
-            const y = Math.sin(dLng) * Math.cos(lat2);
-            const x = Math.cos(lat1) * Math.sin(lat2) - 
-                     Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-            targetBearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-            
-            document.getElementById('nav-bearing').textContent = Math.round(targetBearing) + '°';
-            
-            // Mostrar orientación del dispositivo (debug)
-            document.getElementById('nav-device-heading').textContent = Math.round(deviceHeading) + '°';
-            
-            // Calcular el ángulo de rotación con normalización correcta
-            // Esto maneja correctamente el wraparound de 0-360 grados
-            let rotationAngle = targetBearing - deviceHeading;
-            
-            // Normalizar el ángulo al rango [-180, 180]
-            // Esto asegura que siempre tomamos el camino más corto
-            while (rotationAngle > 180) rotationAngle -= 360;
-            while (rotationAngle < -180) rotationAngle += 360;
-            
-            document.getElementById('nav-arrow-container').style.transform = `rotate(${rotationAngle}deg)`;
-            
-            // Actualizar indicador de confiabilidad
-            updateConfidenceIndicator();
-        }
-        
         
         // ====================================================================
         // SISTEMA AVANZADO DE ORIENTACIÓN Y SENSORES
@@ -3267,7 +3623,7 @@
                                 setupDeviceOrientationListeners();
                             } else {
                                 console.warn('Permiso de orientación denegado');
-                                showNotification('⚠️ Permiso de brújula denegado', 'error');
+                                handlePermissionError('orientation', { message: 'Permiso denegado por el usuario' });
                             }
                         })
                         .catch(err => {
@@ -3279,6 +3635,8 @@
                     // Android y otros navegadores
                     setupDeviceOrientationListeners();
                 }
+            } else {
+                handlePermissionError('orientation', { message: 'DeviceOrientationEvent no disponible' });
             }
         }
         
@@ -3529,11 +3887,22 @@
         }
         
         function stopNavigation() {
+            // Guardar destino si estaba fijado
+            if (destinationLocked && targetLatLng) {
+                saveCurrentDestination();
+            }
+
             if (navWatchId && navigator.geolocation) {
                 navigator.geolocation.clearWatch(navWatchId);
             }
             stopDeviceOrientation();
             document.getElementById('nav-dashboard').style.display = 'none';
+
+            // Reset estados
+            destinationLocked = false;
+            currentSpeed = null;
+            currentGPSHeading = null;
+
             showNotification("Navegación detenida", "success");
         }
 
@@ -3555,18 +3924,44 @@
         }
         
         function processCoordSearch() {
-            const x = parseCRTM05(document.getElementById('coord-x').value);
-            const y = parseCRTM05(document.getElementById('coord-y').value);
-            
+            const xRaw = document.getElementById('coord-x').value.trim();
+            const yRaw = document.getElementById('coord-y').value.trim();
+
+            // Validar formato: solo números, puntos y guiones
+            const coordRegex = /^[\d.,\s-]+$/;
+            if (!coordRegex.test(xRaw) || !coordRegex.test(yRaw)) {
+                showNotification("Formato inválido. Use solo números.", "error");
+                return;
+            }
+
+            const x = parseCRTM05(xRaw);
+            const y = parseCRTM05(yRaw);
+
             if(isNaN(x) || isNaN(y)) {
                 showNotification("Coordenadas inválidas", "error");
                 return;
             }
-            
+
+            // Validar rango CRTM05 usando geo.js si disponible
+            if (typeof validateCRTM05 === 'function') {
+                const v = validateCRTM05(x, y);
+                if (!v.valid) {
+                    showNotification(v.message, "error");
+                    return;
+                }
+            }
+
             try {
                 const [lon, lat] = proj4(CRTM05_DEF, 'WGS84', [x, y]);
-                
-                if (lat < 7 || lat > 12 || lon < -86 || lon > -82) {
+
+                // Validar coordenadas WGS84 usando geo.js
+                if (typeof validateCoordsCR === 'function') {
+                    const vc = validateCoordsCR(lat, lon);
+                    if (!vc.valid) {
+                        showNotification(vc.message, "error");
+                        return;
+                    }
+                } else if (lat < 7 || lat > 12 || lon < -86 || lon > -82) {
                     showNotification("Coordenadas fuera de Costa Rica", "error");
                     return;
                 }
@@ -3706,6 +4101,284 @@
                 log("⏳ Esperando librerías...");
                 setTimeout(() => waitForLibraries(cb), 100);
             }
+        }
+
+        // ====================================================================
+        // BARRA DE ESTADO DE NAVEGACIÓN
+        // ====================================================================
+
+        function updateNavStatusBar(accuracy, quality) {
+            const bar = document.getElementById('nav-status-bar');
+            if (!bar) return;
+
+            if (quality === 'error' || quality === 'searching') {
+                bar.className = 'status-debil';
+                bar.textContent = 'GPS con señal débil - buscando satélites...';
+            } else if (accuracy > 20) {
+                bar.className = 'status-debil';
+                bar.textContent = `GPS con señal débil (±${Math.round(accuracy)}m)`;
+            } else if (!magnetometerCalibrated || orientationConfidence < 40) {
+                bar.className = 'status-orientando';
+                bar.textContent = 'Orientando... mueva el dispositivo lentamente';
+            } else {
+                bar.className = 'status-activa';
+                bar.textContent = 'Navegación activa';
+            }
+        }
+
+        // ====================================================================
+        // FIJAR / DESFIJAR DESTINO
+        // ====================================================================
+
+        function toggleLockDestination() {
+            const btn = document.getElementById('nav-lock-btn');
+            if (!targetLatLng) return;
+
+            destinationLocked = !destinationLocked;
+
+            if (destinationLocked) {
+                btn.textContent = '🔒 Destino Fijado';
+                btn.classList.add('locked');
+                showNotification('Destino fijado. No cambiará al tocar el mapa.', 'success');
+            } else {
+                btn.textContent = '📌 Fijar Destino';
+                btn.classList.remove('locked');
+                showNotification('Destino desbloqueado', 'info');
+            }
+        }
+
+        // ====================================================================
+        // DESTINOS GUARDADOS (localStorage)
+        // ====================================================================
+
+        function getSavedDestinations() {
+            try {
+                return JSON.parse(localStorage.getItem('saved_destinations') || '[]');
+            } catch { return []; }
+        }
+
+        function saveDest(name, lat, lon) {
+            const dests = getSavedDestinations();
+            // Evitar duplicados por nombre
+            const idx = dests.findIndex(d => d.name === name);
+            if (idx >= 0) dests[idx] = { name, lat, lon };
+            else dests.push({ name, lat, lon });
+            localStorage.setItem('saved_destinations', JSON.stringify(dests));
+        }
+
+        function removeSavedDest(index) {
+            const dests = getSavedDestinations();
+            dests.splice(index, 1);
+            localStorage.setItem('saved_destinations', JSON.stringify(dests));
+            renderSavedDestinations();
+        }
+
+        function clearAllSavedDestinations() {
+            localStorage.removeItem('saved_destinations');
+            renderSavedDestinations();
+            showNotification('Destinos eliminados', 'success');
+        }
+
+        function openSavedDestinations() {
+            document.getElementById('saved-destinations-panel').style.display = 'flex';
+            renderSavedDestinations();
+            if(document.getElementById('filter-container').classList.contains('menu-open')) {
+                toggleMenu();
+            }
+        }
+
+        function closeSavedDestinations() {
+            document.getElementById('saved-destinations-panel').style.display = 'none';
+        }
+
+        function renderSavedDestinations() {
+            const container = document.getElementById('saved-dest-list');
+            const dests = getSavedDestinations();
+
+            if (dests.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#6b7280; padding:20px;">No hay destinos guardados.<br><small>Navegue a un punto y use "Fijar Destino" para guardarlo.</small></p>';
+                return;
+            }
+
+            container.innerHTML = dests.map((d, i) => `
+                <div class="saved-dest-item" onclick="navigateToSavedDest(${i})">
+                    <div>
+                        <div class="dest-name">${d.name}</div>
+                        <div class="dest-coords">Lat: ${d.lat.toFixed(6)}, Lon: ${d.lon.toFixed(6)}</div>
+                    </div>
+                    <button class="saved-dest-delete" onclick="event.stopPropagation(); removeSavedDest(${i})" aria-label="Eliminar destino">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function navigateToSavedDest(index) {
+            const dests = getSavedDestinations();
+            const d = dests[index];
+            if (!d) return;
+            closeSavedDestinations();
+            startDirectNavigation(d.lat, d.lon, d.name);
+        }
+
+        // Guardar destino actual cuando se fija
+        function saveCurrentDestination() {
+            if (!targetLatLng) return;
+            const name = document.getElementById('nav-target-info').textContent || 'Destino';
+            saveDest(name, targetLatLng.lat, targetLatLng.lng);
+            showNotification('Destino guardado: ' + name, 'success');
+        }
+
+        // ====================================================================
+        // MODO BRÚJULA SIMPLE
+        // ====================================================================
+
+        let compassAnimFrame = null;
+
+        function startCompassMode() {
+            compassModeActive = true;
+            document.getElementById('compass-mode-panel').style.display = 'flex';
+            if(document.getElementById('filter-container').classList.contains('menu-open')) {
+                toggleMenu();
+            }
+
+            // Iniciar sensores si no están activos
+            initAdvancedSensors();
+
+            // Loop de actualización
+            compassUpdateLoop();
+
+            showNotification('Modo brújula activo', 'success');
+        }
+
+        function stopCompassMode() {
+            compassModeActive = false;
+            document.getElementById('compass-mode-panel').style.display = 'none';
+            if (compassAnimFrame) {
+                cancelAnimationFrame(compassAnimFrame);
+                compassAnimFrame = null;
+            }
+            stopDeviceOrientation();
+            showNotification('Brújula desactivada', 'success');
+        }
+
+        function compassUpdateLoop() {
+            if (!compassModeActive) return;
+
+            const h = deviceHeading;
+            document.getElementById('compass-heading-display').textContent = Math.round(h) + '°';
+            document.getElementById('compass-cardinal').textContent = getCardinal(h);
+            document.getElementById('compass-rose').style.transform = `rotate(${-h}deg)`;
+
+            // Mostrar info de sensor
+            const sensorType = sensorsAvailable.absoluteOrientation ? 'Fusion'
+                : sensorsAvailable.magnetometer ? 'Magnetómetro'
+                : sensorsAvailable.deviceOrientation ? 'DeviceOrientation'
+                : 'No disponible';
+            document.getElementById('compass-sensor-type').textContent = sensorType;
+            document.getElementById('compass-confidence').textContent = Math.round(orientationConfidence) + '%';
+
+            compassAnimFrame = requestAnimationFrame(compassUpdateLoop);
+        }
+
+        function getCardinal(deg) {
+            const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+            return dirs[Math.round(deg / 45) % 8];
+        }
+
+        // ====================================================================
+        // LOGGER DE CAMPO
+        // ====================================================================
+
+        function toggleFieldLogger() {
+            const panel = document.getElementById('field-logger-panel');
+            fieldLoggerVisible = !fieldLoggerVisible;
+            panel.style.display = fieldLoggerVisible ? 'block' : 'none';
+            if(document.getElementById('filter-container').classList.contains('menu-open')) {
+                toggleMenu();
+            }
+        }
+
+        function addFieldLogEntry(entry) {
+            fieldLogEntries.push(entry);
+            if (fieldLogEntries.length > MAX_FIELD_LOG) {
+                fieldLogEntries.shift();
+            }
+
+            if (fieldLoggerVisible) {
+                renderFieldLog();
+            }
+        }
+
+        function renderFieldLog() {
+            const container = document.getElementById('field-log-entries');
+            if (!container) return;
+
+            // Solo mostrar últimas 50 para rendimiento
+            const recent = fieldLogEntries.slice(-50);
+            container.innerHTML = recent.map(e => {
+                const time = e.timestamp ? new Date(e.timestamp).toLocaleTimeString('es-CR') : '--';
+                const lat = e.lat ? e.lat.toFixed(6) : '--';
+                const lon = e.lon ? e.lon.toFixed(6) : '--';
+                const acc = e.accuracy ? Math.round(e.accuracy) : '--';
+                const src = e.headingSource || '--';
+                const brng = e.bearingToDest ? Math.round(e.bearingToDest) : '--';
+                const dist = e.distToDest ? Math.round(e.distToDest) : '--';
+                return `<div class="log-entry">${time} | ${lat},${lon} | ±${acc}m | h:${src} | brng:${brng}° | dist:${dist}m | q:${e.gpsQuality || '--'} | conf:${e.confidence || '--'}%</div>`;
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function exportFieldLog() {
+            if (fieldLogEntries.length === 0) {
+                showNotification('No hay registros para exportar', 'info');
+                return;
+            }
+            const csv = 'timestamp,lat,lon,accuracy,altitude,speed,gpsHeading,sensorHeading,headingSource,bearingToDest,distToDest,gpsQuality,confidence,sensorsActive\n' +
+                fieldLogEntries.map(e =>
+                    `${e.timestamp},${e.lat},${e.lon},${e.accuracy},${e.altitude},${e.speed},${e.gpsHeading},${e.sensorHeading},${e.headingSource},${e.bearingToDest},${e.distToDest},${e.gpsQuality},${e.confidence},${e.sensorsActive}`
+                ).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `field_log_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showNotification('Log exportado como CSV', 'success');
+        }
+
+        function clearFieldLog() {
+            fieldLogEntries = [];
+            renderFieldLog();
+            showNotification('Logger limpiado', 'success');
+        }
+
+        // ====================================================================
+        // MANEJO MEJORADO DE PERMISOS
+        // ====================================================================
+
+        function handlePermissionError(type, error) {
+            let msg = '';
+            if (type === 'gps') {
+                switch (error.code) {
+                    case 1: // PERMISSION_DENIED
+                        msg = 'Debe permitir acceso al GPS para usar la navegación en campo. Vaya a Ajustes > Permisos > Ubicación.';
+                        break;
+                    case 2: // POSITION_UNAVAILABLE
+                        msg = 'Ubicación no disponible. Verifique que el GPS esté activado en su dispositivo.';
+                        break;
+                    case 3: // TIMEOUT
+                        msg = 'Tiempo agotado buscando GPS. Intente al aire libre con mejor vista al cielo.';
+                        break;
+                    default:
+                        msg = 'Error desconocido al acceder al GPS.';
+                }
+            } else if (type === 'orientation') {
+                msg = 'La brújula del dispositivo está deshabilitada. Active el permiso de sensores de movimiento en la configuración del navegador.';
+            }
+            showNotification(msg, 'error');
+            console.error(`Permiso ${type}:`, error);
         }
 
         // ====================================================================
