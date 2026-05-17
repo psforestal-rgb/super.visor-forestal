@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor Forestal ACOPAC-OSRO — Documentación</title>
+<style>
+  :root {
+    --green-dark: #064e3b;
+    --green:      #059669;
+    --green-light:#d1fae5;
+    --green-mid:  #6ee7b7;
+    --amber:      #d97706;
+    --amber-light:#fef3c7;
+    --red:        #dc2626;
+    --gray-50:    #f9fafb;
+    --gray-100:   #f3f4f6;
+    --gray-200:   #e5e7eb;
+    --gray-400:   #9ca3af;
+    --gray-600:   #4b5563;
+    --gray-800:   #1f2937;
+    --gray-900:   #111827;
+    --font:       'Segoe UI', system-ui, -apple-system, sans-serif;
+    --mono:       'Consolas', 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--gray-800);
+    background: var(--gray-50);
+  }
+
+  /* ── COVER ─────────────────────────────────────────────── */
+  .cover {
+    background: linear-gradient(160deg, var(--green-dark) 0%, #065f46 60%, #047857 100%);
+    color: white;
+    padding: 64px 40px 48px;
+    text-align: center;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 999px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    margin-bottom: 20px;
+  }
+  .cover h1 {
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .cover h2 {
+    font-size: clamp(14px, 2.5vw, 20px);
+    font-weight: 400;
+    opacity: .85;
+    margin-bottom: 28px;
+  }
+  .cover-meta {
+    font-size: 12px;
+    opacity: .65;
+    margin-top: 28px;
+  }
+  .cover-meta strong { opacity: .9; }
+
+  /* ── NAVIGATION ─────────────────────────────────────────── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: white;
+    border-bottom: 2px solid var(--green);
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav a {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-600);
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap;
+  }
+  nav a:hover { color: var(--green); }
+  nav a.active { color: var(--green-dark); border-bottom-color: var(--green); }
+
+  /* ── LAYOUT ─────────────────────────────────────────────── */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    max-width: 1100px;
+    margin: 0 auto;
+    gap: 0;
+  }
+  @media (max-width: 700px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { display: none; }
+  }
+
+  /* ── TOC ─────────────────────────────────────────────────── */
+  .toc {
+    position: sticky;
+    top: 49px;
+    height: calc(100vh - 49px);
+    overflow-y: auto;
+    padding: 24px 16px;
+    border-right: 1px solid var(--gray-200);
+    background: white;
+  }
+  .toc-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 12px;
+    padding-left: 8px;
+  }
+  .toc a {
+    display: block;
+    font-size: 12.5px;
+    color: var(--gray-600);
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 5px;
+    margin-bottom: 1px;
+    transition: background .1s, color .1s;
+  }
+  .toc a:hover { background: var(--gray-100); color: var(--green-dark); }
+  .toc a.l2 { padding-left: 18px; font-size: 12px; color: var(--gray-400); }
+  .toc-sep {
+    margin: 10px 8px;
+    border: none;
+    border-top: 1px solid var(--gray-200);
+  }
+
+  /* ── CONTENT ─────────────────────────────────────────────── */
+  main {
+    padding: 40px 40px 80px;
+    min-width: 0;
+  }
+  @media (max-width: 700px) { main { padding: 24px 16px 60px; } }
+
+  /* sections */
+  .doc-section {
+    display: none;
+  }
+  .doc-section.active {
+    display: block;
+  }
+
+  /* headings */
+  .doc-section h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--green-dark);
+    margin-bottom: 6px;
+  }
+  .section-lead {
+    font-size: 14px;
+    color: var(--gray-600);
+    border-left: 3px solid var(--green);
+    padding-left: 12px;
+    margin-bottom: 32px;
+  }
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--green-dark);
+    margin: 36px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--green-light);
+  }
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin: 24px 0 8px;
+  }
+  p { margin-bottom: 12px; }
+
+  /* tables */
+  .table-wrap { overflow-x: auto; margin: 16px 0 20px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  th {
+    background: var(--green-dark);
+    color: white;
+    font-weight: 600;
+    text-align: left;
+    padding: 9px 14px;
+  }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+  tr:nth-child(even) td { background: var(--gray-50); }
+  tr:hover td { background: var(--green-light); }
+
+  /* lists */
+  ul, ol { padding-left: 22px; margin-bottom: 12px; }
+  li { margin-bottom: 5px; }
+
+  /* callouts */
+  .callout {
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .callout-tip  { background: var(--green-light); border-left: 4px solid var(--green); }
+  .callout-warn { background: var(--amber-light); border-left: 4px solid var(--amber); }
+  .callout-info { background: #dbeafe; border-left: 4px solid #3b82f6; }
+
+  /* code */
+  code {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  pre {
+    background: var(--gray-900);
+    color: #e5e7eb;
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    font-size: 13px;
+    font-family: var(--mono);
+    line-height: 1.6;
+  }
+  pre code { background: none; border: none; padding: 0; font-size: inherit; color: inherit; }
+
+  /* badge / pill */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 2px 9px;
+    margin-right: 4px;
+  }
+  .badge-green  { background: var(--green); color: white; }
+  .badge-amber  { background: var(--amber); color: white; }
+  .badge-red    { background: var(--red);   color: white; }
+  .badge-gray   { background: var(--gray-400); color: white; }
+
+  /* checklist */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 5px 0 5px 28px; position: relative; font-size: 14px; }
+  .checklist li::before {
+    content: "☐";
+    position: absolute;
+    left: 0;
+    color: var(--gray-400);
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  /* step numbers */
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps li {
+    counter-increment: step;
+    padding: 10px 0 10px 44px;
+    position: relative;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    width: 28px; height: 28px;
+    background: var(--green);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    top: 12px;
+  }
+
+  /* tree status pills */
+  .status-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+  .status-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .dot-purple { background: #7c3aed; }
+  .dot-red    { background: #dc2626; }
+  .dot-yellow { background: #d97706; }
+
+  /* divider */
+  .divider { border: none; border-top: 2px solid var(--gray-200); margin: 40px 0; }
+
+  /* footer */
+  .doc-footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--gray-400);
+    padding: 40px 20px 20px;
+    border-top: 1px solid var(--gray-200);
+    margin-top: 60px;
+  }
+
+  /* print */
+  @media print {
+    nav, .toc { display: none !important; }
+    .layout { display: block; }
+    .doc-section { display: block !important; }
+    main { padding: 0; }
+    h2 { page-break-after: avoid; }
+    table { page-break-inside: avoid; }
+    pre { white-space: pre-wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-badge">SINAC · ACOPAC · Oficina Subregional Orotina</div>
+  <h1>🌳 Visor Forestal ACOPAC-OSRO</h1>
+  <h2>Documentación técnica e institucional</h2>
+  <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:10px;">
+    <span style="background:rgba(255,255,255,.2);border-radius:6px;padding:4px 12px;font-size:13px;">Manual de Usuario</span>
+    <span style="background:rgba(255,255,255,.2);border-radius:6px;padding:4px 12px;font-size:13px;">Manual de Administrador</span>
+    <span style="background:rgba(255,255,255,.2);border-radius:6px;padding:4px 12px;font-size:13px;">Presentación Institucional</span>
+  </div>
+  <div class="cover-meta">
+    <strong>Ing. Pablo César Sánchez Núñez</strong> · Asistido por Claude™
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<nav id="main-nav">
+  <a href="#" class="active" onclick="showSection('usuario',this)">📖 Manual de Usuario</a>
+  <a href="#" onclick="showSection('admin',this)">⚙️ Manual de Administrador</a>
+  <a href="#" onclick="showSection('presentacion',this)">🏛️ Presentación Institucional</a>
+</nav>
+
+<div class="layout">
+
+  <!-- TOC -->
+  <aside class="toc" id="toc-usuario">
+    <div class="toc-title">Contenido</div>
+    <a href="#u1">1. ¿Qué es el Visor?</a>
+    <a href="#u2">2. Acceso</a>
+    <a href="#u3">3. Pantalla principal</a>
+    <a href="#u4">4. Navegación en el mapa</a>
+    <a href="#u5">5. Consulta de información</a>
+    <a href="#u6">6. Filtros y búsqueda</a>
+    <a href="#u7">7. Herramientas de campo</a>
+    <a class="l2" href="#u7-1">GPS de alta precisión</a>
+    <a class="l2" href="#u7-2">Brújula y rumbo</a>
+    <a class="l2" href="#u7-3">Medición</a>
+    <a class="l2" href="#u7-4">Importar GPX / KML</a>
+    <a href="#u8">8. Trabajo sin conexión</a>
+    <a href="#u9">9. Recargar datos</a>
+    <a href="#u10">10. Buenas prácticas</a>
+    <a href="#u11">11. Problemas comunes</a>
+  </aside>
+
+  <aside class="toc" id="toc-admin" style="display:none">
+    <div class="toc-title">Contenido</div>
+    <a href="#a1">1. Componentes</a>
+    <a href="#a2">2. Estructura del repo</a>
+    <a href="#a3">3. Fuente de datos</a>
+    <a class="l2" href="#a3-1">Cambiar el Sheet</a>
+    <a class="l2" href="#a3-2">Cambiar predeterminado</a>
+    <a class="l2" href="#a3-3">Estructura esperada</a>
+    <a href="#a4">4. GitHub Pages</a>
+    <a href="#a5">5. Traspaso de cuenta</a>
+    <a class="l2" href="#a5-a">Opción A — Transferir</a>
+    <a class="l2" href="#a5-b">Opción B — Fork</a>
+    <a class="l2" href="#a5-c">Traspaso del Sheet</a>
+    <a class="l2" href="#a5-d">Checklist</a>
+    <a href="#a6">6. Operaciones rutinarias</a>
+    <a href="#a7">7. Diagnóstico</a>
+  </aside>
+
+  <aside class="toc" id="toc-presentacion" style="display:none">
+    <div class="toc-title">Contenido</div>
+    <a href="#p1">1. Resumen ejecutivo</a>
+    <a href="#p2">2. Importancia</a>
+    <a href="#p3">3. Usos en fiscalización</a>
+    <a href="#p4">4. Divulgación SINAC</a>
+    <a href="#p5">5. Planes nacionales</a>
+    <a class="l2" href="#p5-1">PNDF 2025-2030</a>
+    <a class="l2" href="#p5-2">Plan Estratégico SINAC</a>
+    <a class="l2" href="#p5-3">PNDIP</a>
+    <a href="#p6">6. Características técnicas</a>
+    <a href="#p7">7. Sostenibilidad</a>
+    <a href="#p8">8. Conclusión</a>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MANUAL DE USUARIO
+  ══════════════════════════════════════════════════════════ -->
+  <main>
+  <section id="sec-usuario" class="doc-section active">
+    <h1>Manual de Usuario</h1>
+    <p class="section-lead">Guía de uso del Visor Forestal ACOPAC-OSRO para funcionarios y personal técnico de campo.</p>
+
+    <h2 id="u1">1. ¿Qué es el Visor Forestal?</h2>
+    <p>Es una aplicación web que muestra en un mapa interactivo la ubicación de todos los <strong>árboles inscritos en los permisos de aprovechamiento forestal</strong> del ACOPAC-OSRO, junto con el estado de cada uno. Los datos provienen de una hoja de Google Sheets que la oficina actualiza continuamente, por lo que el visor refleja la información más reciente.</p>
+    <p>Funciona en cualquier teléfono, tableta o computadora con navegador moderno (Chrome, Edge, Safari, Firefox) y conexión a internet. Una vez cargados los datos, los conserva en caché por <strong>7 días</strong> para consultarlos en zonas sin señal.</p>
+
+    <h2 id="u2">2. Acceso a la herramienta</h2>
+    <ol class="steps">
+      <li>Abra el enlace que le proporcionó el administrador desde el navegador de su preferencia.</li>
+      <li>La aplicación cargará automáticamente. No requiere usuario ni contraseña.</li>
+      <li>Al primer acceso, espere algunos segundos mientras se descargan los datos desde Google Sheets.</li>
+    </ol>
+    <div class="callout callout-tip">
+      <span class="callout-icon">💡</span>
+      <div>Guarde el enlace como <strong>acceso directo en la pantalla de inicio</strong> de su teléfono para abrirlo como si fuera una app.</div>
+    </div>
+
+    <h2 id="u3">3. La pantalla principal</h2>
+    <p>Al abrir el visor encontrará:</p>
+    <ul>
+      <li><strong>Mapa central</strong> con todos los árboles georreferenciados.</li>
+      <li><strong>Marcadores de colores</strong> que indican el estado de cada árbol:</li>
+    </ul>
+    <div class="status-row">
+      <div class="status-pill"><div class="dot dot-purple"></div> <span><strong>Morado</strong> — Aprobado</span></div>
+      <div class="status-pill"><div class="dot dot-red"></div>    <span><strong>Rojo</strong> — Denegado</span></div>
+      <div class="status-pill"><div class="dot dot-yellow"></div> <span><strong>Amarillo</strong> — Sin definir</span></div>
+    </div>
+    <ul>
+      <li><strong>Botón de menú</strong> (☰) en la esquina, que despliega filtros y herramientas.</li>
+      <li><strong>Pie de página</strong> discreto con la autoría de la herramienta.</li>
+    </ul>
+
+    <h2 id="u4">4. Navegación en el mapa</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Acción</th><th>En móvil</th><th>En computadora</th></tr></thead>
+      <tbody>
+        <tr><td>Acercar / alejar</td><td>Pellizcar con dos dedos</td><td>Rueda del ratón o botones <code>+</code> / <code>−</code></td></tr>
+        <tr><td>Mover el mapa</td><td>Arrastrar con un dedo</td><td>Clic y arrastrar</td></tr>
+        <tr><td>Ver detalle de un árbol</td><td>Tocar el marcador</td><td>Clic en el marcador</td></tr>
+        <tr><td>Cambiar capa base</td><td>Selector de capas (esquina superior derecha)</td><td>Selector de capas</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <h3>Capas base disponibles</h3>
+    <ul>
+      <li><strong>Google Híbrido</strong> — vista satelital con etiquetas (recomendada para campo).</li>
+      <li><strong>Bing Satélite</strong> — imagen satelital alterna.</li>
+      <li><strong>ESRI Satélite</strong> — imagen satelital adicional.</li>
+      <li><strong>OpenStreetMap</strong> — mapa de calles.</li>
+    </ul>
+
+    <h2 id="u5">5. Consulta de información de un árbol</h2>
+    <p>Toque cualquier marcador para abrir una ficha emergente con:</p>
+    <ul>
+      <li><strong>Número de expediente</strong> del permiso</li>
+      <li><strong>ID del árbol</strong> dentro del permiso</li>
+      <li><strong>Especie</strong></li>
+      <li><strong>Estado</strong> (Aprobado, Denegado o Sin definir)</li>
+      <li><strong>Observaciones</strong> y campos adicionales registrados en la hoja</li>
+      <li><strong>Coordenadas</strong> en CRTM05 y WGS84</li>
+    </ul>
+
+    <h2 id="u6">6. Filtros y búsqueda</h2>
+    <p>Abra el menú lateral (☰) para acceder a:</p>
+    <ul>
+      <li><strong>Filtro por expediente</strong> — escriba el número y se mostrarán solo los árboles de ese permiso.</li>
+      <li><strong>Filtro por estado</strong> — Aprobado / Denegado / Sin definir.</li>
+      <li><strong>Filtro por especie</strong> — listado desplegable de especies registradas.</li>
+      <li><strong>Búsqueda libre</strong> — texto que busca en todos los campos.</li>
+    </ul>
+    <div class="callout callout-info">
+      <span class="callout-icon">ℹ️</span>
+      <div>Los filtros se combinan: por ejemplo, «expediente X + estado Denegado» muestra solo los árboles denegados de ese permiso.</div>
+    </div>
+
+    <h2 id="u7">7. Herramientas de navegación en campo</h2>
+
+    <h3 id="u7-1">7.1 GPS de alta precisión</h3>
+    <p>Al activar la ubicación del dispositivo, el visor:</p>
+    <ul>
+      <li>Muestra su posición actual con un círculo azul.</li>
+      <li>Calcula un <strong>promedio ponderado de 5 lecturas</strong> para reducir el error del GPS.</li>
+      <li>Indica la <strong>precisión estimada</strong> en metros.</li>
+    </ul>
+
+    <h3 id="u7-2">7.2 Brújula y rumbo</h3>
+    <p>Si su dispositivo cuenta con sensor de orientación:</p>
+    <ul>
+      <li>Aparecerá una <strong>flecha de rumbo</strong> que apunta hacia el árbol seleccionado.</li>
+      <li>Verá la <strong>distancia en metros</strong> y el <strong>acimut</strong> (grados respecto al norte).</li>
+    </ul>
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚠️</span>
+      <div>En iOS, el navegador puede pedir permiso para acceder al sensor de orientación. Acéptelo para usar la brújula.</div>
+    </div>
+
+    <h3 id="u7-3">7.3 Medición de distancias y áreas</h3>
+    <p>En el menú lateral encontrará <strong>Herramientas de medición</strong>:</p>
+    <ul>
+      <li><strong>Medir distancia</strong> — toque dos o más puntos sobre el mapa para obtener la distancia total.</li>
+      <li><strong>Medir área</strong> — dibuje un polígono cerrado para obtener su área en hectáreas y m².</li>
+    </ul>
+
+    <h3 id="u7-4">7.4 Importar archivos GPX o KML</h3>
+    <ol class="steps">
+      <li>Menú ☰ → <strong>Importar capa</strong>.</li>
+      <li>Seleccione un archivo <code>.gpx</code> o <code>.kml</code> desde su dispositivo.</li>
+      <li>La capa se sobrepondrá al mapa hasta que la cierre.</li>
+    </ol>
+
+    <h2 id="u8">8. Trabajo sin conexión</h2>
+    <ul>
+      <li>La primera vez que abra el visor con internet, los datos se guardarán en el dispositivo.</li>
+      <li>Si pierde la señal en campo, <strong>los datos seguirán visibles</strong> por hasta 7 días.</li>
+      <li>Las capas satelitales sí requieren conexión para mosaicos nuevos; las zonas ya visitadas quedan en caché del navegador.</li>
+    </ul>
+
+    <h2 id="u9">9. Recargar datos manualmente</h2>
+    <p>Si la oficina actualizó la hoja y quiere ver los cambios de inmediato:</p>
+    <ol class="steps">
+      <li>Menú ☰ → <strong>🔄 Recargar Datos</strong>.</li>
+      <li>Espere el mensaje de confirmación.</li>
+    </ol>
+    <p>El visor también se <strong>actualiza automáticamente cada 5 minutos</strong> mientras está abierto.</p>
+
+    <h2 id="u10">10. Buenas prácticas en campo</h2>
+    <ul>
+      <li>Lleve el teléfono con <strong>batería completa</strong> y, si es posible, una batería externa.</li>
+      <li>Active el <strong>modo de alto rendimiento de GPS</strong> en su dispositivo.</li>
+      <li>En zonas con dosel denso, espere 30–60 s para que el GPS estabilice las lecturas.</li>
+      <li>Use el <strong>modo de pantalla brillante</strong> o un protector mate para visibilidad bajo el sol.</li>
+      <li>Si va a usar la herramienta como evidencia, <strong>tome captura de pantalla</strong> del marcador con la ficha abierta.</li>
+    </ul>
+
+    <h2 id="u11">11. Resolución de problemas</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Problema</th><th>Solución</th></tr></thead>
+      <tbody>
+        <tr><td>No carga el mapa</td><td>Verifique conexión a internet y refresque la página.</td></tr>
+        <tr><td>No aparecen los árboles</td><td>Toque «Recargar Datos» desde el menú.</td></tr>
+        <tr><td>GPS impreciso</td><td>Salga de techos/dosel denso y espere unos segundos.</td></tr>
+        <tr><td>La brújula no funciona</td><td>Acepte el permiso de orientación; en iOS reinicie el navegador si fue denegado.</td></tr>
+        <tr><td>Datos desactualizados</td><td>Recargue manualmente o cierre y abra la pestaña.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="doc-footer">Ing. Pablo César Sánchez Núñez · Asistido por Claude™</div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MANUAL DE ADMINISTRADOR
+  ══════════════════════════════════════════════════════════ -->
+  <section id="sec-admin" class="doc-section">
+    <h1>Manual de Administrador</h1>
+    <p class="section-lead">Guía técnica para la persona responsable del mantenimiento, configuración y traspaso de la herramienta.</p>
+
+    <h2 id="a1">1. Componentes de la herramienta</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Componente</th><th>Servicio</th><th>Función</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Código fuente</strong></td><td>GitHub (<code>super.visor-forestal</code>)</td><td>Aloja el archivo <code>index.html</code> y la documentación.</td></tr>
+        <tr><td><strong>Hospedaje web</strong></td><td>GitHub Pages</td><td>Sirve la aplicación en una URL pública.</td></tr>
+        <tr><td><strong>Fuente de datos</strong></td><td>Google Sheets</td><td>Contiene los registros de permisos, árboles y estados.</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>No existe servidor propio ni base de datos centralizada: todo se sirve desde GitHub Pages y se alimenta de la hoja de Google.</p>
+
+    <h2 id="a2">2. Estructura del repositorio</h2>
+    <pre><code>super.visor-forestal/
+├── index.html        ← aplicación completa (HTML + CSS + JS)
+├── README.md
+└── docs/
+    ├── MANUAL_USUARIO.md
+    ├── MANUAL_ADMINISTRADOR.md
+    ├── PRESENTACION_INSTITUCIONAL.md
+    └── manuales.html   ← este documento</code></pre>
+    <p>Todo el código de la aplicación está en <strong>un solo archivo</strong> (<code>index.html</code>). No requiere compilación ni dependencias adicionales.</p>
+
+    <h2 id="a3">3. Configuración de la fuente de datos</h2>
+
+    <h3 id="a3-1">3.1 Cambiar el Google Sheet conectado</h3>
+    <p>Cualquier usuario puede cambiar la fuente desde la propia herramienta:</p>
+    <ol class="steps">
+      <li>Abrir el visor.</li>
+      <li>Menú ☰ → <strong>⚙️ Fuente de Datos</strong>.</li>
+      <li>Modificar el <strong>Sheet ID</strong> (la parte entre <code>/d/</code> y <code>/edit</code> en la URL de la hoja) y el <strong>GID</strong> (identificador numérico de la pestaña, visible después de <code>gid=</code>).</li>
+      <li>Guardar cada campo y recargar los datos.</li>
+    </ol>
+    <div class="callout callout-info">
+      <span class="callout-icon">ℹ️</span>
+      <div>La configuración se guarda en el <code>localStorage</code> del navegador del usuario que la modificó. No afecta a otros usuarios.</div>
+    </div>
+
+    <h3 id="a3-2">3.2 Cambiar la fuente por defecto del repositorio</h3>
+    <p>Para que <em>todos</em> los usuarios nuevos carguen automáticamente una hoja distinta:</p>
+    <ol class="steps">
+      <li>Abrir <code>index.html</code> en GitHub → botón ✏️ (Edit).</li>
+      <li>Localizar al inicio del bloque <code>&lt;script&gt;</code>:</li>
+    </ol>
+    <pre><code>let SHEET_ID_DATA = 'XXXXXXXXXXXXXXXXXXXXXXXX';
+let GID_DATA      = '0';
+let LOGS_WEBHOOK_URL = '';</code></pre>
+    <ol class="steps" start="3">
+      <li>Reemplazar los valores y guardar el cambio (commit).</li>
+      <li>En 1–2 minutos GitHub Pages republica la página actualizada.</li>
+    </ol>
+
+    <h3 id="a3-3">3.3 Estructura esperada de la hoja de Google</h3>
+    <p>La pestaña debe tener encabezados que incluyan, como mínimo:</p>
+    <ul>
+      <li>Número de <strong>expediente</strong></li>
+      <li><strong>ID del árbol</strong></li>
+      <li><strong>Especie</strong></li>
+      <li><strong>Estado</strong> (Aprobado / Denegado / Sin definir)</li>
+      <li><strong>Coordenadas en CRTM05</strong> — columnas tipo <code>X</code> / <code>Este</code> e <code>Y</code> / <code>Norte</code> en <strong>metros CRTM05 (CR-SIRGAS / EPSG:8908)</strong>. El visor convierte internamente a WGS84; no se deben ingresar latitud/longitud directamente.</li>
+    </ul>
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚠️</span>
+      <div>La hoja debe estar publicada como <strong>"Cualquier persona con el enlace puede ver"</strong> para que el visor pueda exportarla como CSV.</div>
+    </div>
+
+    <h2 id="a4">4. Hospedaje en GitHub Pages</h2>
+    <h3>Verificar que Pages está activo</h3>
+    <ol class="steps">
+      <li>Ingresar al repositorio en GitHub.</li>
+      <li>Pestaña <strong>Settings</strong> → barra lateral <strong>Pages</strong>.</li>
+      <li>En <em>Source</em> debe figurar <code>Deploy from a branch</code> → <code>main</code> → <code>/ (root)</code>.</li>
+      <li>La URL pública aparece en la parte superior.</li>
+    </ol>
+    <p>Para reactivar Pages si se desactiva, repita los pasos y seleccione manualmente <code>main</code> + <code>/ (root)</code> → <strong>Save</strong>.</p>
+
+    <h2 id="a5">5. Procedimiento de traspaso a otro administrador</h2>
+
+    <h3 id="a5-a">Opción A — Transferir el repositorio (recomendada)</h3>
+    <p>Mantiene el historial, las issues y la URL si el nuevo usuario conserva el mismo <em>username</em>.</p>
+    <ol class="steps">
+      <li>Cuenta saliente → repositorio → <strong>Settings</strong> → bajar a <em>Danger Zone</em> → <strong>Transfer ownership</strong>.</li>
+      <li>Escribir nombre del repo (<code>super.visor-forestal</code>) y el usuario/organización del nuevo dueño.</li>
+      <li>Confirmar con contraseña.</li>
+      <li>GitHub envía un correo al administrador entrante; debe <strong>aceptar la transferencia</strong>.</li>
+      <li>El nuevo administrador confirma que GitHub Pages está activo en <code>main / (root)</code>.</li>
+      <li>Comunicar la nueva URL a los usuarios si el <em>username</em> cambió.</li>
+    </ol>
+
+    <h3 id="a5-b">Opción B — Fork + archivar</h3>
+    <p>Útil cuando el saliente desea conservar el repositorio como respaldo.</p>
+    <ol class="steps">
+      <li>Administrador entrante hace <strong>Fork</strong> del repositorio a su cuenta.</li>
+      <li>Activa <strong>GitHub Pages</strong> en el fork (Settings → Pages → <code>main</code> → <code>/ (root)</code>).</li>
+      <li>Administrador saliente <strong>archiva</strong> su repositorio (Settings → Archive this repository).</li>
+      <li>Comunicar la nueva URL.</li>
+    </ol>
+
+    <h3 id="a5-c">Traspaso del Google Sheet</h3>
+    <ol class="steps">
+      <li>Abrir la hoja → menú <strong>Compartir</strong>.</li>
+      <li>Agregar al usuario entrante como editor → menú de tres puntos → <strong>Hacer propietario</strong>.</li>
+      <li>Mantener el permiso público de lectura.</li>
+      <li>Confirmar que el <strong>Sheet ID</strong> no cambió; si cambia, actualizarlo en la herramienta.</li>
+    </ol>
+
+    <h3 id="a5-d">Lista de verificación de traspaso</h3>
+    <ul class="checklist">
+      <li>Repositorio en la cuenta del nuevo administrador.</li>
+      <li>GitHub Pages activo y URL pública verificada en navegador.</li>
+      <li>Google Sheet con propietario actualizado y permiso público de lectura.</li>
+      <li>Webhook de logs transferido (si aplica).</li>
+      <li>Manual de Usuario distribuido a los funcionarios de la oficina.</li>
+      <li>Manual de Administrador conservado por el nuevo responsable.</li>
+      <li>Cuenta saliente desvinculada o archivada como respaldo.</li>
+    </ul>
+
+    <h2 id="a6">6. Operaciones rutinarias</h2>
+    <h3>Actualizar el código</h3>
+    <p>Desde GitHub web: editar <code>index.html</code> y hacer <em>commit</em>. Desde local: clonar, modificar, <code>git commit</code> y <code>git push</code>. GitHub Pages republica en 1–2 minutos.</p>
+    <h3>Revertir un cambio</h3>
+    <p>En GitHub → <strong>Commits</strong> → localizar el commit problemático → <strong>Revert</strong> → confirmar.</p>
+    <h3>Backup</h3>
+    <ul>
+      <li><strong>Código:</strong> descargue periódicamente un <code>.zip</code> desde <em>Code → Download ZIP</em>.</li>
+      <li><strong>Datos:</strong> descargue la hoja de Google como <code>.xlsx</code> (mensual sugerido).</li>
+    </ul>
+
+    <h2 id="a7">7. Diagnóstico de problemas comunes</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Síntoma</th><th>Causa probable</th><th>Acción</th></tr></thead>
+      <tbody>
+        <tr><td>Visor abre pero sin árboles</td><td>Hoja no pública o ID incorrecto</td><td>Reabrir permisos del Sheet o actualizar el Sheet ID</td></tr>
+        <tr><td>Error «CORS» en consola</td><td>Proxies de respaldo saturados</td><td>Esperar unos minutos; el visor intenta 5 proxies</td></tr>
+        <tr><td>Datos viejos persisten</td><td>Caché de 7 días en el navegador</td><td>Recargar datos o limpiar caché del navegador</td></tr>
+        <tr><td>GitHub Pages devuelve 404</td><td>Pages desactivado o rama cambiada</td><td>Reactivar en Settings → Pages</td></tr>
+        <tr><td>Brújula no funciona en iOS</td><td>Permiso de orientación denegado</td><td>Reiniciar Safari y aceptar permiso al cargar</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="doc-footer">Ing. Pablo César Sánchez Núñez · Asistido por Claude™</div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PRESENTACIÓN INSTITUCIONAL
+  ══════════════════════════════════════════════════════════ -->
+  <section id="sec-presentacion" class="doc-section">
+    <h1>Presentación Institucional</h1>
+    <p class="section-lead">Herramienta digital de apoyo a la fiscalización, supervisión y divulgación de permisos de aprovechamiento forestal — Oficina Subregional de Orotina, ACOPAC-SINAC.</p>
+
+    <h2 id="p1">1. Resumen ejecutivo</h2>
+    <p>El <strong>Visor Forestal ACOPAC-OSRO</strong> es una aplicación web cartográfica que centraliza, georreferencia y comunica en tiempo casi real la información de los <strong>árboles inscritos en los permisos de aprovechamiento forestal</strong> tramitados por la Oficina Subregional de Orotina.</p>
+    <p>La herramienta convierte una hoja de cálculo administrativa en un mapa interactivo que cualquier funcionario habilitado puede consultar desde un teléfono, una tableta o una computadora, dentro o fuera de la oficina, con o sin conexión continua a internet.</p>
+    <p>Su propósito es <strong>fortalecer la trazabilidad</strong> de los permisos, <strong>agilizar la supervisión en campo</strong> y <strong>transparentar</strong> la información entre los funcionarios del SINAC y las instancias vinculadas al control forestal.</p>
+
+    <h2 id="p2">2. Importancia y oportunidad</h2>
+    <h3>El reto del control forestal en Costa Rica</h3>
+    <p>El aprovechamiento forestal fuera de bosque y el manejo de bosque secundario son actividades reguladas por la <strong>Ley Forestal N.º 7575</strong>, sus reglamentos y los lineamientos del SINAC. Cada permiso genera información dispersa: expedientes en papel, hojas de cálculo, coordenadas en formatos diversos y registros de inspección parciales. Esa dispersión:</p>
+    <ul>
+      <li>Dificulta la <strong>fiscalización oportuna</strong> del recurso autorizado.</li>
+      <li>Genera <strong>asimetrías de información</strong> entre funcionarios técnicos, jefaturas, fiscalías ambientales y otras instancias.</li>
+      <li>Limita la capacidad de <strong>reportar resultados</strong> y detectar irregularidades.</li>
+    </ul>
+    <h3>La respuesta tecnológica</h3>
+    <p>El Visor Forestal aborda estos puntos con tres principios:</p>
+    <ol>
+      <li><strong>Una sola fuente de verdad</strong> — la hoja maestra de la oficina alimenta directamente el visor; no existen versiones paralelas.</li>
+      <li><strong>Cero fricción de acceso</strong> — no requiere instalación, cuenta de usuario ni capacitación extensa.</li>
+      <li><strong>Operación en campo y oficina</strong> — funciona sobre dispositivos comunes, con GPS de alta precisión y trabajo sin conexión hasta por 7 días.</li>
+    </ol>
+
+    <h2 id="p3">3. Usos potenciales en fiscalización y supervisión</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Función institucional</th><th>Aplicación del visor</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Inspección previa</strong></td><td>Ubicar exactamente los árboles propuestos antes de la visita y planificar la ruta óptima.</td></tr>
+        <tr><td><strong>Inspección de seguimiento</strong></td><td>Verificar en sitio si los árboles aprovechados coinciden con los aprobados, midiendo distancia y rumbo desde el GPS.</td></tr>
+        <tr><td><strong>Fiscalización posterior</strong></td><td>Cruzar el inventario aprobado con denuncias o detecciones de aprovechamiento ilegal.</td></tr>
+        <tr><td><strong>Detección de patrones</strong></td><td>Visualizar clústeres de permisos en un mismo predio o región para análisis de presión sobre el recurso.</td></tr>
+        <tr><td><strong>Atención de denuncias</strong></td><td>Determinar si una coordenada denunciada coincide con un permiso vigente, denegado o sin trámite.</td></tr>
+        <tr><td><strong>Coordinación interinstitucional</strong></td><td>Compartir el enlace con MINAE, Fuerza Pública, Tribunal Ambiental o Fiscalía Adjunta Agrario Ambiental para inspecciones conjuntas.</td></tr>
+        <tr><td><strong>Rendición de cuentas</strong></td><td>Tomar capturas geolocalizadas como evidencia para expedientes administrativos.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="p4">4. Divulgación entre funcionarios e instancias del SINAC</h2>
+    <p>El visor habilita un esquema de <strong>transparencia activa intrainstitucional</strong>:</p>
+    <ul>
+      <li><strong>Funcionarios de la oficina subregional</strong> — consultan en cualquier momento el estado de cualquier expediente sin depender de la persona que lleva el trámite.</li>
+      <li><strong>Jefaturas del Área de Conservación</strong> — monitorean indicadores agregados sin solicitar informes adicionales.</li>
+      <li><strong>Otras oficinas subregionales del ACOPAC</strong> — pueden adoptar el modelo replicando el visor con su propia hoja, generando una red de visores con la misma lógica.</li>
+      <li><strong>Dirección Ejecutiva del SINAC y SE-PROFOR</strong> — disponen de una vista cartográfica directa para análisis estratégico.</li>
+      <li><strong>Auditorías internas, Contraloría y Fiscalía Ambiental</strong> — acceden a información georreferenciada verificable como insumo de investigaciones.</li>
+    </ul>
+    <div class="callout callout-info">
+      <span class="callout-icon">ℹ️</span>
+      <div>La herramienta no sustituye los sistemas oficiales (SIRECOR, expedientes físicos), sino que actúa como <strong>capa de visualización y consulta rápida</strong> sobre los mismos datos que ya gestiona la oficina.</div>
+    </div>
+
+    <h2 id="p5">5. Alineación con los planes nacionales</h2>
+
+    <h3 id="p5-1">5.1 Plan Nacional de Desarrollo Forestal (PNDF) 2025–2030</h3>
+    <p>El PNDF establece como ejes centrales el <strong>manejo sostenible del recurso forestal</strong>, la <strong>gobernanza basada en información</strong> y la <strong>transparencia en la gestión de permisos de aprovechamiento</strong>. El Visor Forestal contribuye directamente a:</p>
+    <ul>
+      <li><strong>Eje de gobernanza y transparencia</strong> — pone a disposición de funcionarios la información georreferenciada de permisos, condición habilitante para una toma de decisiones informada y la rendición de cuentas.</li>
+      <li><strong>Eje de control y fiscalización</strong> — facilita el seguimiento sistemático del recurso autorizado, complementando los mecanismos de inspección establecidos.</li>
+      <li><strong>Eje de modernización tecnológica</strong> — demuestra cómo una solución de bajo costo y código abierto puede potenciar la gestión sin infraestructura adicional.</li>
+    </ul>
+
+    <h3 id="p5-2">5.2 Plan Estratégico Institucional del SINAC</h3>
+    <p>El Plan Estratégico vigente del SINAC contempla, entre otros, los siguientes objetivos con los cuales se alinea el visor:</p>
+    <ul>
+      <li><strong>Fortalecer la gestión del control y la protección de los recursos naturales.</strong></li>
+      <li><strong>Modernizar y digitalizar los procesos sustantivos</strong> del Sistema.</li>
+      <li><strong>Mejorar la articulación entre las áreas de conservación y entre niveles</strong> (subregional, regional, central).</li>
+      <li><strong>Comunicar oportunamente</strong> los resultados de la gestión a actores internos y externos.</li>
+    </ul>
+
+    <h3 id="p5-3">5.3 Plan Nacional de Desarrollo e Inversión Pública (PNDIP)</h3>
+    <p>El PNDIP del periodo de gobierno actual prioriza:</p>
+    <ul>
+      <li><strong>Gobierno digital y simplificación de trámites</strong> — soluciones que reduzcan cargas administrativas a funcionarios y administrados.</li>
+      <li><strong>Transparencia, rendición de cuentas y datos abiertos</strong> — herramientas para reducir oportunidades de corrupción y aumentar la confianza ciudadana.</li>
+      <li><strong>Gestión ambiental con énfasis en eficiencia institucional</strong> — aprovechamiento sostenible de los recursos naturales bajo gobernanza del MINAE-SINAC.</li>
+    </ul>
+    <p>El Visor Forestal materializa estas prioridades en una herramienta concreta, sin costo de licenciamiento, sostenible con los recursos humanos existentes y replicable en otras subregionales del país.</p>
+
+    <h2 id="p6">6. Características técnicas relevantes</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Característica</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td>Arquitectura ligera</td><td>Un único archivo HTML sirve toda la aplicación desde GitHub Pages.</td></tr>
+        <tr><td>Sin servidor propio</td><td>Cero costo recurrente y cero administración de infraestructura.</td></tr>
+        <tr><td>Datos vivos</td><td>Lectura directa desde Google Sheets con actualización automática cada 5 minutos.</td></tr>
+        <tr><td>Operación offline</td><td>Caché de hasta 7 días en el dispositivo.</td></tr>
+        <tr><td>Compatibilidad universal</td><td>Cualquier navegador moderno en cualquier sistema operativo.</td></tr>
+        <tr><td>Estándares geográficos oficiales</td><td>Soporta CRTM05 (CR-SIRGAS / EPSG:8908) y WGS84.</td></tr>
+        <tr><td>Apertura del código</td><td>Repositorio público, alineado con principios de gobierno abierto.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="p7">7. Sostenibilidad y traspaso</h2>
+    <p>La herramienta está diseñada para ser <strong>mantenida por una sola persona</strong> con conocimientos básicos de Google Sheets y GitHub. El procedimiento de traspaso entre administradores está documentado en el <em>Manual de Administrador</em> y contempla:</p>
+    <ul>
+      <li>Transferencia formal del repositorio entre cuentas de GitHub.</li>
+      <li>Cambio de propiedad del Google Sheet fuente.</li>
+      <li>Continuidad sin interrupción del servicio para los usuarios finales.</li>
+    </ul>
+
+    <h2 id="p8">8. Conclusión</h2>
+    <p>El <strong>Visor Forestal ACOPAC-OSRO</strong> es una contribución concreta a la modernización de la gestión forestal en Costa Rica. Convierte información administrativa en conocimiento accionable, reduce los costos de fiscalización, fortalece la transparencia intrainstitucional y se alinea con los planes nacionales y sectoriales vigentes.</p>
+    <p>Su adopción y mantenimiento sostenido representan un paso firme hacia un SINAC más eficiente, transparente y orientado a la sostenibilidad del recurso forestal.</p>
+
+    <div class="doc-footer">Ing. Pablo César Sánchez Núñez · Asistido por Claude™</div>
+  </section>
+  </main>
+
+</div><!-- /layout -->
+
+<script>
+function showSection(name, link) {
+  // hide all sections
+  document.querySelectorAll('.doc-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.toc').forEach(t => t.style.display = 'none');
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+
+  // show target
+  document.getElementById('sec-' + name).classList.add('active');
+  document.getElementById('toc-' + name).style.display = 'block';
+  if (link) link.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  return false;
+}
+
+// smooth scroll for TOC links
+document.addEventListener('click', function(e) {
+  const a = e.target.closest('.toc a');
+  if (!a) return;
+  const id = a.getAttribute('href').replace('#','');
+  const el = document.getElementById(id);
+  if (el) {
+    e.preventDefault();
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+});
+</script>
+</body>
+</html>
