@@ -73,7 +73,7 @@ La pestaña debe tener encabezados que incluyan, como mínimo:
 - **ID del árbol**
 - **Especie**
 - **Estado** (Aprobado / Denegado / Sin definir)
-- **Coordenadas** (CRTM05 o WGS84)
+- **Coordenadas en CRTM05** — columnas con encabezados tipo `X` / `Este` (coordenada este) e `Y` / `Norte` (coordenada norte), expresadas en **metros CRTM05 (CR-SIRGAS / EPSG:8908)**. El visor convierte internamente estas coordenadas a WGS84 para mostrarlas en el mapa; no se deben ingresar latitud/longitud directamente en la hoja, ya que serían interpretadas como metros CRTM05 y se perdería la georreferenciación.
 
 El visor detecta los encabezados de forma flexible (acepta variaciones como "ESPECIE", "Especie", "esp"). Para máxima compatibilidad mantenga los nombres tal como están en la hoja vigente al momento del traspaso.
 
